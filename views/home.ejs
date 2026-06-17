@@ -1,0 +1,104 @@
+<% layout('layouts/boilerplate') %>
+
+<style>
+    .hero-main-title {
+        color: var(--finmate-purple-heading) !important;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+    }
+    .hero-sub-title {
+        color: var(--finmate-purple-sub) !important;
+        font-weight: 400;
+    }
+    .feature-card-icon-box {
+        background-color: var(--finmate-card-bg) !important;
+        border: 1px solid var(--finmate-border);
+    }
+    .hero-svg-graphic {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+    }
+</style>
+
+<div class="container my-5 py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 col-md-12 mb-5 mb-lg-0">
+            <h1 class="display-4 hero-main-title mb-2">
+                Conquer campus expenses,<br>one pool at a time!
+            </h1>
+            <p class="fs-5 hero-sub-title mb-0" style="max-width: 550px;">
+                Master your monthly allowance, split canteen bills with your friends, pool carts to hit delivery minimums, and audit unutilized platform subscriptions.
+            </p>
+        </div>
+        <div class="col-lg-6 col-md-12 text-center">
+            <svg class="hero-svg-graphic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 712" aria-label="FinMate Expense Illustration">
+                <path d="M850,450 C950,400 930,200 800,180 C750,80 500,70 450,150 C350,100 150,150 120,280 C50,330 60,520 180,560 C250,650 750,660 850,450 Z" fill="#F6F0FC"/>
+                <rect x="278" y="345" width="512" height="195" rx="12" fill="#2F2E41"/>
+                <rect x="385" y="195" width="298" height="150" fill="#2F2E41" stroke="#2F2E41" stroke-width="4"/>
+                <rect x="398" y="208" width="272" height="124" fill="#FFFFFF"/>
+                <circle cx="735" cy="385" r="10" fill="#FF5722"/>
+                <circle cx="760" cy="385" r="10" fill="#4CAF50"/>
+                <path d="M380,442 L670,442 L720,700 L330,700 Z" fill="#FFFFFF"/>
+                <text x="500" y="610" font-family="Arial, sans-serif" font-size="110" font-weight="bold" fill="var(--finmate-purple-heading)" text-anchor="middle">$</text>
+                <path d="M260,280 C275,250 310,240 330,270 L380,345 L300,345 Z" fill="#2F2E41"/>
+                <path d="M245,295 L288,328 L275,340 L235,310 Z" fill="var(--finmate-purple-sub)"/>
+                <circle cx="310" cy="235" r="16" fill="#F2C94C"/>
+                <polygon points="240,290 280,315 270,325 230,300" fill="#9052D4"/>
+                <circle cx="340" cy="405" r="15" fill="#F2C94C"/>
+                <path d="M320,420 C290,440 270,470 275,540 L300,540 C295,490 310,470 345,450 Z" fill="#2F2E41"/>
+                <path d="M340,420 L275,475 L255,460 L315,410 Z" fill="var(--finmate-purple-heading)"/>
+                <path d="M285,540 L285,610 L310,610 L310,540 Z" fill="#2F2E41"/>
+                <path d="M320,540 L335,610 L360,610 L335,540 Z" fill="#2F2E41"/>
+                <circle cx="680" cy="365" r="16" fill="#F2C94C"/>
+                <path d="M690,380 C720,400 760,420 805,450 C810,500 815,550 830,610 L800,610 C790,560 780,510 755,470 L720,530 L695,520 Z" fill="#2F2E41"/>
+                <path d="M685,380 L765,420 L785,450 L755,470 L695,410 Z" fill="var(--finmate-purple-sub)"/>
+                <path d="M720,530 L725,610 L755,610 L750,530 Z" fill="#2F2E41"/>
+                <path d="M710,195 C730,130 790,100 820,150 C800,180 750,210 710,195 Z" fill="var(--finmate-purple-sub)"/>
+                <path d="M750,145 C780,95 850,110 830,165 C800,175 770,165 750,145 Z" fill="var(--finmate-purple-sub)"/>
+                <path d="M725,185 C685,150 710,90 760,115 C750,145 740,170 725,185 Z" fill="#9052D4"/>
+                <path d="M740,210 L780,120" stroke="#2F2E41" stroke-width="3" fill="none"/>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5 py-4 border-top">
+    <div class="row text-center justify-content-center g-4">
+        <div class="col-md-4 col-sm-12" style="max-width: 350px;">
+            <div class="mb-3 p-3">
+                <div class="feature-card-icon-box rounded-circle d-inline-flex p-4 align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="bi bi-diagram-3-fill fs-2"></i>
+                </div>
+            </div>
+            <h3 class="h5 fw-bold mb-2 text-primary">Friend Group Splitting</h3>
+            <p class="text-secondary small px-3">
+                Log canteen splits or group outlays instantly. Our optimized graph engine tracks group circles, simplifying peer debt webs down to minimal transactions.
+            </p>
+        </div>
+
+        <div class="col-md-4 col-sm-12" style="max-width: 350px;">
+            <div class="mb-3 p-3">
+                <div class="feature-card-icon-box rounded-circle d-inline-flex p-4 align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="bi bi-lightning-charge-fill fs-2"></i>
+                </div>
+            </div>
+            <h3 class="h5 fw-bold mb-2 text-primary">Flash Delivery Pools</h3>
+            <p class="text-secondary small px-3">
+                Open 10-minute order countdowns with hostel mates. Co-pool items to beat cart minimums, escape basic delivery fees, and auto-split remainder fees.
+            </p>
+        </div>
+
+        <div class="col-md-4 col-sm-12" style="max-width: 350px;">
+            <div class="mb-3 p-3">
+                <div class="feature-card-icon-box rounded-circle d-inline-flex p-4 align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="bi bi-eye-slash-fill fs-2"></i>
+                </div>
+            </div>
+            <h3 class="h5 fw-bold mb-2 text-primary">Ghost Audits</h3>
+            <p class="text-secondary small px-3">
+                Stop leaking cash on fixed entertainment platforms. Monitor low utilization levels across joint streaming plans and flag inactive subscriptions in red.
+            </p>
+        </div>
+    </div>
+</div>

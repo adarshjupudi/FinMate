@@ -1,39 +1,229 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinMate</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root, [data-bs-theme="light"] {
+            --finmate-purple-heading: #9052D4;
+            --finmate-purple-sub: #B084E3;
+            --finmate-purple-dark: #643199;
+            --finmate-bg: #FFFFFF;
+            --finmate-card-bg: #F8F9FA;
+            --finmate-nav-bg: #FFFFFF;
+            --finmate-text: #212529;
+            --finmate-text-muted: #6C757D;
+            --finmate-border: #DEE2E6;
+        }
+        [data-bs-theme="dark"] {
+            --finmate-purple-heading: #B084E3;
+            --finmate-purple-sub: #CBB1F0;
+            --finmate-purple-dark: #9052D4;
+            --finmate-bg: #120E1A;
+            --finmate-card-bg: #1A1526;
+            --finmate-nav-bg: #1A1526;
+            --finmate-text: #F8F9FA;
+            --finmate-text-muted: #A69DBF;
+            --finmate-border: #2D2540;
+        }
+
+        body {
+            background-color: var(--finmate-bg) !important;
+            color: var(--finmate-text) !important;
+        }
+
+        .bg-body-tertiary {
+            background-color: var(--finmate-nav-bg) !important;
+        }
+
+        .border-bottom, .border-top {
+            border-color: var(--finmate-border) !important;
+        }
+
+        .text-primary, .navbar-brand {
+            color: var(--finmate-purple-heading) !important;
+        }
+
+        .text-secondary {
+            color: var(--finmate-text-muted) !important;
+        }
+
+        .bi {
+            color: var(--finmate-purple-heading);
+        }
+
+        .btn-finmate-solid {
+            background-color: var(--finmate-purple-heading) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--finmate-purple-heading) !important;
+            border-radius: 6px;
+            font-weight: 500;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-finmate-solid:hover {
+            background-color: var(--finmate-purple-dark) !important;
+            border-color: var(--finmate-purple-dark) !important;
+            color: #FFFFFF !important;
+        }
+
+        .btn-finmate-outline {
+            color: var(--finmate-purple-heading) !important;
+            border: 1px solid var(--finmate-purple-heading) !important;
+            background: transparent !important;
+            border-radius: 6px;
+            font-weight: 500;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-finmate-outline:hover {
+            background-color: var(--finmate-purple-sub) !important;
+            color: #FFFFFF !important;
+            border-color: var(--finmate-purple-sub) !important;
+        }
+
+        .nav-button-container {
+            display: flex;
+            align-items: center;
+            height: 40px;
+        }
+
+        #themeToggler .bi {
+            color: var(--finmate-purple-heading) !important;
+        }
+    </style>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
 </head>
-<body class="d-flex flex-column vh-100 bg-light">
+<body class="d-flex flex-column min-vh-100">
 
-    <div class="container mt-3">
-        <% if (success && success.length) { %>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <%= success %>
+    <nav class="navbar navbar-expand-lg border-bottom px-4 bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4" href="/">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>FinMate</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <div class="navbar-nav align-items-center gap-3 mt-3 mt-lg-0">
+                    <button class="btn border-0 px-2 d-flex align-items-center justify-content-center" id="themeToggler" type="button" aria-label="Toggle Theme Mode" style="height: 40px;">
+                        <i class="bi bi-sun-fill id-sun fs-5"></i>
+                        <i class="bi bi-moon-stars-fill id-moon fs-5 d-none"></i>
+                    </button>
+
+                    <% if(!currentUser) { %>
+                        <div class="nav-button-container">
+                            <a class="nav-link btn btn-finmate-outline px-4 gap-2" href="/login">
+                                <i class="bi bi-box-arrow-in-right m-0 p-0" style="color: inherit;"></i> Login
+                            </a>
+                        </div>
+                        <div class="nav-button-container">
+                            <a class="nav-link btn btn-finmate-solid px-4 gap-2" href="/register">
+                                <i class="bi bi-person-plus-fill m-0 p-0" style="color: inherit;"></i> Sign Up
+                            </a>
+                        </div>
+                    <% } else { %>
+                        <span class="navbar-text fw-medium px-2 d-inline-flex align-items-center gap-2" style="color: var(--finmate-text);">
+                            <i class="bi bi-person-circle text-primary fs-5"></i> Hi, <%= currentUser.username %>
+                        </span>
+                        <div class="nav-button-container">
+                            <a class="btn btn-outline-danger px-3 d-inline-flex align-items-center gap-2 fw-medium" href="/logout" style="height: 40px; border-radius: 6px;">
+                                <i class="bi bi-box-arrow-left"></i> Logout
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <% if(success && success.length) { %>
+        <div class="container mt-4 mb-0">
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2 text-success"></i><%= success %>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        <% } %>
+        </div>
+    <% } %>
 
-        <% if (error && error.length) { %>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <%= error %>
+    <% if(error && error.length) { %>
+        <div class="container mt-4 mb-0">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i><%= error %>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        <% } %>
-    </div>
+        </div>
+    <% } %>
 
-    <main class="container my-5 flex-grow-1">
+    <main class="flex-grow-1">
         <%- body %>
     </main>
 
-    <footer class="footer bg-dark py-3 mt-auto">
-        <div class="container text-center">
-            <span class="text-muted">&copy; FinMate 2026</span>
+    <footer class="footer py-4 mt-auto border-top px-4 bg-body-tertiary">
+        <div class="container-fluid d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 fs-5 fw-bold text-primary">
+                FinMate
+            </div>
+            
+            <div class="d-flex gap-4 fs-6">
+                <a href="#" class="text-secondary text-decoration-none">About</a>
+                <a href="#" class="text-secondary text-decoration-none">Help</a>
+            </div>
+
+            <div class="d-flex gap-3 fs-5 text-secondary">
+                <a href="#" class="text-reset"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="text-reset"><i class="bi bi-twitter"></i></a>
+                <a href="#" class="text-reset"><i class="bi bi-instagram"></i></a>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const themeToggler = document.getElementById('themeToggler');
+        const updateToggleIcons = (theme) => {
+            const sun = themeToggler.querySelector('.id-sun');
+            const moon = themeToggler.querySelector('.id-moon');
+            if (theme === 'dark') {
+                sun.classList.add('d-none');
+                moon.classList.remove('d-none');
+            } else {
+                moon.classList.add('d-none');
+                sun.classList.remove('d-none');
+            }
+        };
+
+        updateToggleIcons(document.documentElement.getAttribute('data-bs-theme'));
+
+        themeToggler.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-bs-theme', targetTheme);
+            localStorage.setItem('theme', targetTheme);
+            updateToggleIcons(targetTheme);
+        });
+    </script>
 </body>
 </html>

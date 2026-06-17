@@ -1,114 +1,134 @@
-<%- layout('layouts/boilerplate') %>
+<% layout('layouts/boilerplate') %>
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-xl-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4 fw-bold">Join FinMate</h3>
-                
-                <form action="/register" method="POST" novalidate id="registerForm">
-                    <div class="mb-3">
-                        <label class="form-label" for="username">Campus Username</label>
-                        <input class="form-control" type="text" id="username" name="username" placeholder="e.g., adarsh_j" required>
-                        <div class="valid-feedback">
-                            Looks good!
-                        </div>
-                        <div class="invalid-feedback">
-                            Please choose a campus username.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label" for="email">Email Address</label>
-                        <input class="form-control" type="email" id="email" name="email" placeholder="name@campus.edu" required>
-                        <div class="valid-feedback">
-                            Email format looks valid!
-                        </div>
-                        <div class="invalid-feedback">
-                            Please enter a valid campus email address.
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label" for="password">Password</label>
-                        <input class="form-control" type="password" id="password" name="password" placeholder="••••••••" required>
-                        <div class="valid-feedback">
-                            Filled in!
-                        </div>
-                        <div class="invalid-feedback">
-                            Please enter a password.
-                        </div>
-                    </div>
-
-                    <div class="d-grid">
-                        <button class="btn btn-success btn-block fw-bold" id="submitBtn">Sign Up</button>
-                    </div>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <small class="text-muted">Already have an account? <a href="/login" class="text-success text-decoration-none">Log In</a></small>
+<div class="container d-flex justify-content-center align-items-center my-5 animate-fade-in" style="min-height: 70vh;">
+    <div class="card p-4 shadow-sm border" style="width: 100%; max-width: 450px; background-color: var(--finmate-card-bg); border-radius: 12px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4 fw-bold" style="color: var(--finmate-purple-heading);">Join FinMate</h2>
+            
+            <form action="/register" method="POST" id="registerForm" novalidate>
+                <div class="mb-3">
+                    <label for="username" class="form-label small fw-medium">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Choose a unique username" minlength="3" required autofocus style="border-radius: 6px;">
+                    <div class="invalid-feedback" id="usernameFeedback">Username must be at least 3 characters.</div>
                 </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label small fw-medium">Campus Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="student@iitbbs.ac.in" required style="border-radius: 6px;">
+                    <div class="invalid-feedback" id="emailFeedback">Please enter a valid email format.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="allowance" class="form-label small fw-medium">Initial Monthly Allowance (Optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-body-secondary border-end-0" style="border-radius: 6px 0 0 6px; color: var(--finmate-purple-heading);">₹</span>
+                        <input type="number" class="form-control border-start-0" id="allowance" name="allowance" placeholder="0" min="0" style="border-radius: 0 6px 6px 0;">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label small fw-medium">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Create a strong password" minlength="6" required style="border-radius: 6px;">
+                    <div class="invalid-feedback">Password must be at least 6 characters.</div>
+                </div>
+
+                <button class="btn btn-finmate-solid w-100 d-flex align-items-center justify-content-center gap-2 mb-3" type="submit" id="submitBtn">
+                    <i class="bi bi-person-plus-fill" style="color: inherit;"></i> Create Account
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <p class="small text-secondary mb-0">Already registered? <a href="/login" class="text-decoration-none fw-medium" style="color: var(--finmate-purple-heading);">Log In here</a></p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    (function () 
-    {
-        'use strict'
-        const form = document.querySelector('#registerForm')
-        const inputs = form.querySelectorAll('input')
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('registerForm');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const allowanceInput = document.getElementById('allowance');
 
-        // Reusable validation checker for a single input element
-        function validateInput(input) 
-        {
-            if (input.checkValidity()) 
-            {
-                input.classList.remove('is-invalid')
-                input.classList.add('is-valid')
-            } 
-            else 
-            {
-                input.classList.remove('is-valid')
-                input.classList.add('is-invalid')
+        let usernameTimeout = null;
+        let emailTimeout = null;
+
+        // Responsive Username Checking Loop
+        usernameInput.addEventListener('input', () => {
+            clearTimeout(usernameTimeout);
+            const username = usernameInput.value.trim();
+            const feedback = document.getElementById('usernameFeedback');
+
+            if (username.length < 3) {
+                usernameInput.classList.remove('is-valid');
+                usernameInput.classList.add('is-invalid');
+                feedback.textContent = "Username must be at least 3 characters.";
+                return;
             }
-        }
 
-        // Attach real-time listeners to every input box
-        Array.from(inputs).forEach(function (input) 
-        {
-            // Triggers as soon as the user types, pastes, or deletes a character
-            input.addEventListener('input', function () 
-            {
-                validateInput(input)
-            })
-
-            // Triggers when a user clicks out of the input box
-            input.addEventListener('blur', function () 
-            {
-                validateInput(input)
-            })
-        })
-
-        // Guard rails on final form submission
-        form.addEventListener('submit', function (event) 
-        {
-            let isFormValid = true
-            Array.from(inputs).forEach(function (input) 
-            {
-                validateInput(input)
-                if (!input.checkValidity()) 
-                {
-                    isFormValid = false
+            // Debounce server ping by 300ms to save resources while typing
+            usernameTimeout = setTimeout(async () => {
+                const response = await fetch(`/check-username?username=${encodeURIComponent(username)}`);
+                const data = await response.json();
+                
+                if (data.exists) {
+                    usernameInput.classList.remove('is-valid');
+                    usernameInput.classList.add('is-invalid');
+                    feedback.textContent = "This username is already taken.";
+                } else {
+                    usernameInput.classList.remove('is-invalid');
+                    usernameInput.classList.add('is-valid');
                 }
-            })
+            }, 300);
+        });
 
-            if (!isFormValid) 
-            {
-                event.preventDefault()
-                event.stopPropagation()
+        // Responsive Email Checking Loop
+        emailInput.addEventListener('input', () => {
+            clearTimeout(emailTimeout);
+            const email = emailInput.value.trim();
+            const feedback = document.getElementById('emailFeedback');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                emailInput.classList.remove('is-valid');
+                emailInput.classList.add('is-invalid');
+                feedback.textContent = "Please enter a valid email format.";
+                return;
             }
-        }, false)
-    })()
+
+            emailTimeout = setTimeout(async () => {
+                const response = await fetch(`/check-email?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+                
+                if (data.exists) {
+                    emailInput.classList.remove('is-valid');
+                    emailInput.classList.add('is-invalid');
+                    feedback.textContent = "This email is already registered.";
+                } else {
+                    emailInput.classList.remove('is-invalid');
+                    emailInput.classList.add('is-valid');
+                }
+            }, 300);
+        });
+
+        // Standard validation fields fallback bounds
+        passwordInput.addEventListener('input', () => {
+            if(passwordInput.value.length >= 6) {
+                passwordInput.classList.remove('is-invalid');
+                passwordInput.classList.add('is-valid');
+            } else {
+                passwordInput.classList.remove('is-valid');
+                passwordInput.classList.add('is-invalid');
+            }
+        });
+
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity() || usernameInput.classList.contains('is-invalid') || emailInput.classList.contains('is-invalid')) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, false);
+    });
 </script>

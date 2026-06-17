@@ -1,92 +1,69 @@
-<%- layout('layouts/boilerplate') %>
+<% layout('layouts/boilerplate') %>
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-xl-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4 fw-bold">Welcome Back</h3>
-                
-                <form action="/login" method="POST" novalidate id="loginForm">
-                    <div class="mb-3">
-                        <label class="form-label" for="username">Campus Username</label>
-                        <input class="form-control" type="text" id="username" name="username" placeholder="Username" required autofocus>
-                        <div class="invalid-feedback">
-                            Please enter your campus username.
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label" for="password">Password</label>
-                        <input class="form-control" type="password" id="password" name="password" placeholder="••••••••" required>
-                        <div class="invalid-feedback">
-                            Please enter your password.
-                        </div>
-                    </div>
-
-                    <div class="d-grid">
-                        <button class="btn btn-success btn-block fw-bold">Log In</button>
-                    </div>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <small class="text-muted">New to campus? <a href="/register" class="text-success text-decoration-none">Create an Account</a></small>
+<div class="container d-flex justify-content-center align-items-center my-5 animate-fade-in" style="min-height: 65vh;">
+    <div class="card p-4 shadow-sm border" style="width: 100%; max-width: 420px; background-color: var(--finmate-card-bg); border-radius: 12px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4 fw-bold" style="color: var(--finmate-purple-heading);">Welcome Back</h2>
+            
+            <form action="/login" method="POST" id="loginForm" novalidate>
+                <div class="mb-3">
+                    <label for="username" class="form-label small fw-medium">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required autofocus style="border-radius: 6px;">
+                    <div class="invalid-feedback">Please enter your username.</div>
                 </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label small fw-medium">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required style="border-radius: 6px;">
+                    <div class="invalid-feedback">Please enter your password.</div>
+                </div>
+
+                <button class="btn btn-finmate-solid w-100 d-flex align-items-center justify-content-center gap-2 mb-3" type="submit">
+                    <i class="bi bi-box-arrow-in-right" style="color: inherit;"></i> Sign In
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <p class="small text-secondary mb-0">New to the campus? <a href="/register" class="text-decoration-none fw-medium" style="color: var(--finmate-purple-heading);">Create an account</a></p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    (function () 
-    {
-        'use strict'
-        const form = document.querySelector('#loginForm')
-        const inputs = form.querySelectorAll('input')
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('loginForm');
+        const inputs = form.querySelectorAll('input');
 
-        function validateInput(input) 
-        {
-            if (input.checkValidity()) 
-            {
-                input.classList.remove('is-invalid')
-                input.classList.add('is-valid')
-            } 
-            else 
-            {
-                input.classList.remove('is-valid')
-                input.classList.add('is-invalid')
-            }
-        }
-
-        Array.from(inputs).forEach(function (input) 
-        {
-            input.addEventListener('input', function () 
-            {
-                validateInput(input)
-            })
-
-            input.addEventListener('blur', function () 
-            {
-                validateInput(input)
-            })
-        })
-
-        form.addEventListener('submit', function (event) 
-        {
-            let isFormValid = true
-            Array.from(inputs).forEach(function (input) 
-            {
-                validateInput(input)
-                if (!input.checkValidity()) 
-                {
-                    isFormValid = false
+        // 1. Instantaneous validation as the user types
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.checkValidity()) {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                } else {
+                    input.classList.remove('is-valid');
+                    input.classList.add('is-invalid');
                 }
-            })
+            });
+        });
 
-            if (!isFormValid) 
-            {
-                event.preventDefault()
-                event.stopPropagation()
+        // 2. Safe submit handler that doesn't block valid submissions
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault(); // Stop submission ONLY if invalid
+                event.stopPropagation();
             }
-        }, false)
-    })()
+            // Force visual update on all fields if they hit submit empty
+            inputs.forEach(input => {
+                if (input.checkValidity()) {
+                    input.classList.add('is-valid');
+                    input.classList.remove('is-invalid');
+                } else {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                }
+            });
+        }, false);
+    });
 </script>

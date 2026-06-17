@@ -1,73 +1,170 @@
-<%- layout('layouts/boilerplate') %>
+<% layout('layouts/boilerplate') %>
 
-<div class="container-fluid">
+<div class="container-fluid py-4 px-4 animate-fade-in">
+    
     <div class="row mb-4">
         <div class="col-12">
-            <div class="bg-white p-4 rounded shadow-sm d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="fw-bold mb-1">Hey, <%= currentUser ? currentUser.username : 'User' %>!</h2>
-                    <p class="text-muted mb-0">Welcome back to your campus workspace.</p>
+            <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--finmate-purple-heading), var(--finmate-purple-dark)); color: #FFFFFF;">
+                <div class="card-body p-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center z-1 position-relative">
+                    <div class="mb-3 mb-sm-0">
+                        <span class="text-white-50 text-uppercase tracking-wider small fw-bold d-block mb-1">Available Campus Balance</span>
+                        <h1 class="display-4 fw-bold m-0">₹<%= currentUser.allowance || 0 %></h1>
+                    </div>
+                    <div>
+                        <button class="btn btn-light text-dark fw-bold px-4 py-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal" style="border-radius: 8px;">
+                            <i class="bi bi-plus-circle-fill" style="color: var(--finmate-purple-heading);"></i> Quick Log Outlay
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <a href="/logout" class="btn btn-outline-danger fw-bold btn-sm">Log Out</a>
+                <div class="position-absolute end-0 top-50 translate-middle-y opacity-10 pe-5 d-none d-md-block">
+                    <i class="bi bi-wallet2" style="font-size: 12rem; color: #FFFFFF;"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex align-items-center mb-3">
-                            <h5 class="card-title fw-bold mb-0">Wallet and Expenses</h5>
+        
+        <div class="col-xl-6 col-lg-12">
+            <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">1. Money Tracker</h5>
+                            <small class="text-secondary">Chronological ledger of personal outlays</small>
                         </div>
-                        <h3 class="fw-bold text-success mb-2">INR <%= currentUser ? currentUser.allowance : 0 %></h3>
-                        <p class="card-text text-muted small">Current monthly budget limit. Set your allowance below to track metrics.</p>
+                        <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-medium">Active History</span>
                     </div>
-                    <form action="/dashboard/allowance" method="POST" class="mt-3">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">INR</span>
-                            <input type="number" name="allowance" class="form-control" placeholder="Update budget" min="0" required>
-                            <button class="btn btn-success fw-bold">Set</button>
+
+                    <% if(typeof expenses !== 'undefined' && expenses.length > 0) { %>
+                        <div class="d-flex flex-column gap-3" style="max-height: 400px; overflow-y: auto;">
+                            <% expenses.forEach(expense => { %>
+                                <div class="p-3 border d-flex align-items-center justify-content-between bg-body rounded-3 shadow-sm-hover">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center border bg-light" style="width: 44px; height: 44px;">
+                                            <% if(expense.category === 'Canteen') { %><i class="bi bi-cup-hot text-primary fs-5"></i>
+                                            <% } else if(expense.category === 'Academics') { %><i class="bi bi-book text-primary fs-5"></i>
+                                            <% } else if(expense.category === 'Travel') { %><i class="bi bi-car-front text-primary fs-5"></i>
+                                            <% } else if(expense.category === 'Junk Food') { %><i class="bi bi-egg-fried text-primary fs-5"></i>
+                                            <% } else { %><i class="bi bi-tag text-primary fs-5"></i><% } %>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold"><%= expense.description %></h6>
+                                            <span class="text-secondary small"><%= expense.category %> &bull; <%= new Date(expense.createdAt).toLocaleDateString() %></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fs-5 fw-bold text-primary">₹<%= expense.amount %></span>
+                                    </div>
+                                </div>
+                            <% }) %>
                         </div>
-                    </form>
+                    <% } else { %>
+                        <div class="text-center py-5 my-3 text-secondary">
+                            <i class="bi bi-receipt display-5 d-block mb-3 opacity-50"></i>
+                            <p class="m-0 fw-medium">Your transactional ledger is empty.</p>
+                            <span class="small text-secondary">New entries will populate sequentially here.</span>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm opacity-75">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">Wingman Ledger</h5>
-                    <h3 class="fw-bold text-primary mb-2">INR 0</h3>
-                    <p class="card-text text-muted small">Peer transaction splitting loops. Locked until Phase 2.</p>
-                    <button class="btn btn-sm btn-outline-primary w-100 fw-bold disabled mt-auto">Manage Circles</button>
+        <div class="col-xl-6 col-lg-12">
+            <div class="row g-4">
+                
+                <div class="col-12">
+                    <div class="card border shadow-sm" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">2. Money Splitter</h5>
+                                    <small class="text-secondary">Peer-to-peer circle debt settlements</small>
+                                </div>
+                                <i class="bi bi-people-fill fs-4 text-primary"></i>
+                            </div>
+                            <div class="p-4 border border-dashed rounded-3 bg-body text-center">
+                                <p class="text-secondary small mb-0">No active outstanding group balances or pool splits tracked inside your peer circle.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="col-md-6 col-12">
+                    <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">3. Ghost Tracker</h5>
+                                    <i class="bi bi-eye-slash-fill fs-4 text-primary"></i>
+                                </div>
+                                <small class="text-secondary d-block">Unutilized streaming plan monitors</small>
+                            </div>
+                            <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
+                                <span class="small text-secondary">No hidden subscription leak alerts logged.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-12">
+                    <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">4. Pool Carts</h5>
+                                    <i class="bi bi-lightning-charge-fill fs-4 text-primary"></i>
+                                </div>
+                                <small class="text-secondary d-block">Co-pool to hit minimum delivery values</small>
+                            </div>
+                            <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
+                                <span class="small text-secondary">No active delivery pool lobbies nearby.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm opacity-75">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">Flash Delivery Pool</h5>
-                    <h3 class="fw-bold text-warning mb-2">0 Lobbies</h3>
-                    <p class="card-text text-muted small">Coordinate cart minimums. Locked until Phase 3.</p>
-                    <button class="btn btn-sm btn-outline-warning w-100 fw-bold disabled mt-auto">Open Lobby</button>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm opacity-75">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">Ghost Flag Tracker</h5>
-                    <h3 class="fw-bold text-danger mb-2">INR 0 Wasted</h3>
-                    <p class="card-text text-muted small">Background scanning cron engines. Locked until Phase 1 End.</p>
-                    <button class="btn btn-sm btn-outline-danger w-100 fw-bold disabled mt-auto">Audit Plans</button>
-                </div>
+<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="addExpenseModalLabel" style="color: var(--finmate-purple-heading);">Record Campus Outlay</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form action="/expenses" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="description" class="form-label small fw-medium">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" placeholder="e.g., Canteen cold drinks" required style="border-radius: 8px;">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label for="amount" class="form-label small fw-medium">Amount (₹)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" min="1" placeholder="0" required style="border-radius: 8px;">
+                        </div>
+                        <div class="col-6">
+                            <label for="category" class="form-label small fw-medium">Category</label>
+                            <select class="form-select" id="category" name="category" required style="border-radius: 8px;">
+                                <option value="Canteen">Canteen</option>
+                                <option value="Academics">Academics</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Junk Food">Junk Food</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-finmate-outline btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-finmate-solid btn-sm px-4">Save Entry</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

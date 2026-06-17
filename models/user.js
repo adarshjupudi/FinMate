@@ -6,18 +6,14 @@ const UserSchema = new Schema({
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true
     },
     allowance: {
         type: Number,
         default: 0,
         min: 0
     },
-    goals: [{
-        title: String,
-        targetAmount: Number,
-        currentAmount: { type: Number, default: 0 }
-    }],
     subscriptions: [{
         name: String,
         cost: Number,
