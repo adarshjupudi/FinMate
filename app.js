@@ -14,6 +14,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
 const userRoutes = require('./routes/users');
+const { isLoggedIn } = require('./middleware/index'); // Imported the authentication wall
 
 // --- DATABASE CONNECTION ---
 const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/finmate';
@@ -71,10 +72,27 @@ app.use((req, res, next) =>
 // --- MOUNT ROUTERS ---
 app.use('/', userRoutes);
 
-// --- BASIC TEST ROUTE ---
-app.get('/', (req, res) => 
+// --- PROTECTED DASHBOARD HOME PAGE ---
+app.get('/', isLoggedIn, (req, res) => 
 {
-    res.send('FinMate Server is Live with Auth Mounted!');
+    res.render('dashboard/index');
+});
+
+// --- UPDATE ALLOWANCE ENGINE ROUTE ---
+app.post('/dashboard/allowance', isLoggedIn, async (req, res) => 
+{
+    try 
+    {
+        const { allowance } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { allowance: allowance });
+        req.flash('success', 'Allowance budget successfully configured.');
+        res.redirect('/');
+    } 
+    catch (e) 
+    {
+        req.flash('error', 'Failed to update allowance configuration.');
+        res.redirect('/');
+    }
 });
 
 // --- SERVER START ---

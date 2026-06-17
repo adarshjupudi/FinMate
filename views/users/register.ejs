@@ -1,4 +1,4 @@
-<% layout('layouts/boilerplate') %>
+<%- layout('layouts/boilerplate') %>
 
 <div class="row justify-content-center">
     <div class="col-md-6 col-xl-4">
@@ -10,16 +10,34 @@
                     <div class="mb-3">
                         <label class="form-label" for="username">Campus Username</label>
                         <input class="form-control" type="text" id="username" name="username" placeholder="e.g., adarsh_j" required>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
+                        <div class="invalid-feedback">
+                            Please choose a campus username.
+                        </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="email">Email Address</label>
                         <input class="form-control" type="email" id="email" name="email" placeholder="name@campus.edu" required>
+                        <div class="valid-feedback">
+                            Email format looks valid!
+                        </div>
+                        <div class="invalid-feedback">
+                            Please enter a valid campus email address.
+                        </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label" for="password">Password</label>
                         <input class="form-control" type="password" id="password" name="password" placeholder="••••••••" required>
+                        <div class="valid-feedback">
+                            Filled in!
+                        </div>
+                        <div class="invalid-feedback">
+                            Please enter a password.
+                        </div>
                     </div>
 
                     <div class="d-grid">
@@ -34,3 +52,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () 
+    {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(function (form) 
+        {
+            form.addEventListener('submit', function (event) 
+            {
+                if (!form.checkValidity()) 
+                {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
