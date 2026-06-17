@@ -1,0 +1,135 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container py-5 animate-fade-in" style="max-width: 1000px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-finmate-outline btn-sm px-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h3 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">
+            <i class="bi bi-lightning-charge-fill"></i> Delivery Pool Carts
+        </h3>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4 col-12">
+            <div class="card border shadow-sm" style="background-color: var(--finmate-card-bg); border-radius: 16px; position: sticky; top: 24px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3" style="color: var(--finmate-purple-heading);">Host a New Pool</h5>
+                    <p class="text-secondary small">Ordering from somewhere? Start a cart merge lobby so peers can combine items and skip delivery fees.</p>
+                    
+                    <form action="/lobbies" method="POST" class="mt-3">
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">App/Store Name</label>
+                            <input type="text" class="form-control" name="storeName" placeholder="e.g., Zomato - Canteen" required style="border-radius: 8px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Free Delivery Goal (₹)</label>
+                            <input type="number" class="form-control" name="targetAmount" value="399" min="1" required style="border-radius: 8px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Your Item Cost (₹)</label>
+                            <input type="number" class="form-control" name="initialItemCost" placeholder="180" min="1" required style="border-radius: 8px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Your Items Description</label>
+                            <textarea class="form-control" name="initialItemDesc" rows="2" placeholder="e.g., Chicken Biryani" required style="border-radius: 8px;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-finmate-solid w-100 fw-bold mt-2" style="border-radius: 8px;">Open Cart Lobby</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-12">
+            <h6 class="fw-bold text-secondary text-uppercase tracking-wider mb-3">Live Campus Cart Merges</h6>
+
+            <% if (lobbies && lobbies.length > 0) { %>
+                <div class="d-flex flex-column gap-4">
+                    <% lobbies.forEach(lobby => { 
+                        const progress = Math.min(Math.round((lobby.currentAmount / lobby.targetAmount) * 100), 100); 
+                        const met = lobby.currentAmount >= lobby.targetAmount;
+                        const statusClass = met ? 'text-success' : 'text-warning';
+                        const statusText = met ? 'Target Unlocked!' : '₹' + (lobby.targetAmount - lobby.currentAmount) + ' Remaining';
+                    %>
+                        <div class="card border shadow-sm bg-body" style="border-radius: 16px;">
+                            <div class="card-header border-bottom bg-transparent p-4 d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <span class="badge bg-primary-subtle text-primary mb-1 rounded-pill px-3">Host: @<%= lobby.host.username %></span>
+                                    <h4 class="fw-bold m-0 text-dark"><%= lobby.storeName %></h4>
+                                </div>
+                                <div class="text-end">
+                                    <span class="small text-secondary d-block">Lobby Status</span>
+                                    <span class="fw-bold <%= statusClass %>"><%= statusText %></span>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body p-4">
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small fw-medium text-secondary mb-1">
+                                        <span>Cart Value: ₹<%= lobby.currentAmount %></span>
+                                        <span>Target: ₹<%= lobby.targetAmount %></span>
+                                    </div>
+                                    <div class="progress" style="height: 10px; border-radius: 6px; background-color: var(--finmate-border);">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <%= progress %>%; background-color: var(--finmate-purple-heading) !important;"></div>
+                                    </div>
+                                </div>
+
+                                <h6 class="fw-bold small text-secondary text-uppercase tracking-wider mb-2">Cart Manifest</h6>
+                                <div class="d-flex flex-column gap-2 mb-4">
+                                    <% lobby.members.forEach(member => { %>
+                                        <div class="p-3 border rounded-3 bg-light-subtle d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="small fw-bold text-dark d-block">@<%= member.user.username %> added:</span>
+                                                <span class="small text-secondary"><%= member.itemsDescription %></span>
+                                            </div>
+                                            <span class="fw-bold text-primary">₹<%= member.itemCost %></span>
+                                        </div>
+                                    <% }) %>
+                                </div>
+
+                                <div class="border-top pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <% if (currentUser._id.toString() === lobby.host._id.toString()) { %>
+                                        <form action="/lobbies/<%= lobby._id %>/close" method="POST" class="m-0 w-100">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm px-4 w-100 fw-bold" style="height: 38px;">Close & Place Group Order</button>
+                                        </form>
+                                    <% } else { %>
+                                        <button class="btn btn-finmate-solid btn-sm px-4 w-100 fw-bold" data-bs-toggle="collapse" data-bs-target="#join_form_<%= lobby._id %>" style="height: 38px;">
+                                            <i class="bi bi-plus-lg"></i> Merge My Items Into This Cart
+                                        </button>
+                                    <% } %>
+                                </div>
+
+                                <div class="collapse mt-3" id="join_form_<%= lobby._id %>">
+                                    <div class="p-3 border rounded-3 bg-light-subtle">
+                                        <form action="/lobbies/<%= lobby._id %>/join" method="POST">
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col-sm-4">
+                                                    <label class="form-label small fw-medium m-0">Cost (₹)</label>
+                                                    <input type="number" class="form-control form-control-sm" name="itemCost" min="1" required>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label small fw-medium m-0">Items</label>
+                                                    <input type="text" class="form-control form-control-sm" name="itemsDescription" placeholder="e.g., Fries" required>
+                                                </div>
+                                                <div class="col-sm-2">
+                                                    <button type="submit" class="btn btn-sm btn-success w-100 fw-bold">Add</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-5 border border-dashed bg-body" style="border-radius: 16px;">
+                    <i class="bi bi-lightning-charge display-4 d-block mb-3 opacity-25" style="color: var(--finmate-purple-heading);"></i>
+                    <h5 class="fw-bold mb-1" style="color: var(--finmate-text);">No active lobbies found.</h5>
+                    <p class="text-secondary small m-0">Be the first to open a cart merge pool on campus!</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>

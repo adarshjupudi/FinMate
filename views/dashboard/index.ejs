@@ -1,11 +1,9 @@
 <% layout('layouts/boilerplate') %>
 
-<!-- Injecting Chart.js via direct secure pipeline CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container-fluid py-4 px-4 animate-fade-in">
     
-    <!-- TOP SECTION: HIGH-CONTRAST BUDGET ALIGNMENT BANNER -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--finmate-purple-heading), var(--finmate-purple-dark)); color: #FFFFFF;">
@@ -35,10 +33,8 @@
         </div>
     </div>
 
-    <!-- MAIN CORE MATRIX: THE 4 CAMPUS FEATURES GRID -->
     <div class="row g-4">
         
-        <!-- MODULE 1: PERSONAL MONEY TRACKER -->
         <div class="col-xl-7 col-lg-12">
             <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                 <div class="card-body p-4">
@@ -142,7 +138,6 @@
         <div class="col-xl-5 col-lg-12">
             <div class="row g-4">
                 
-                <!-- MODULE 2: FRIEND CIRCLE & SPLITTER PANEL -->
                 <div class="col-12">
                     <div class="card border shadow-sm" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4">
@@ -215,7 +210,6 @@
                     </div>
                 </div>
 
-                <!-- MODULE 3: GHOST TRACKER (FIXED BACKGROUND HIGH-CONTRAST DISPLAY) -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -228,7 +222,6 @@
                             </div>
                             
                             <% if (typeof subStats !== 'undefined' && subStats !== null && populatedUser.subscriptions && populatedUser.subscriptions.length > 0) { %>
-                                <!-- TEXT ACCENT CORRECTION: Gray input overlay removed to maximize dark mode legibility -->
                                 <div class="p-3 border rounded-3 mb-3" style="background-color: var(--finmate-nav-bg); border-color: var(--finmate-border) !important;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="small fw-medium text-secondary">Total Recurring:</span>
@@ -255,7 +248,6 @@
                     </div>
                 </div>
 
-                <!-- MODULE 4: POOL CART LOBBIES -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -266,9 +258,22 @@
                                 </div>
                                 <small class="text-secondary d-block">Co-pool to hit minimum delivery values</small>
                             </div>
-                            <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
-                                <span class="small text-secondary">No active delivery pool lobbies nearby.</span>
-                            </div>
+                            
+                            <% if (typeof activeLobbies !== 'undefined' && activeLobbies.length > 0) { %>
+                                <div class="p-3 border rounded-3 mb-3" style="background-color: var(--finmate-nav-bg); border-color: var(--finmate-border) !important;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small fw-medium text-secondary">Active Pools:</span>
+                                        <span class="badge bg-finmate-solid rounded-pill px-3 py-1 text-xs" style="background-color: var(--finmate-purple-heading) !important; color:#fff !important;"><%= activeLobbies.length %> Lobbies Open</span>
+                                    </div>
+                                </div>
+                                <a href="/lobbies" class="btn btn-finmate-outline btn-sm w-100 fw-bold">Enter Lobbies</a>
+                            <% } else { %>
+                                <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
+                                    <p class="small text-secondary mb-2">No delivery pool lobbies nearby.</p>
+                                    <a href="/lobbies" class="btn btn-finmate-solid btn-sm px-4">Create Lobby</a>
+                                </div>
+                            <% } %>
+
                         </div>
                     </div>
                 </div>
@@ -277,7 +282,6 @@
     </div>
 </div>
 
-<!-- MODAL: LOG PERSONAL EXPENSE -->
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -317,7 +321,6 @@
     </div>
 </div>
 
-<!-- MODAL: DEDICATED PEER BILL SPLITTER LAYER -->
 <div class="modal fade" id="splitBillModal" tabindex="-1" aria-labelledby="splitBillModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -390,7 +393,6 @@
     </div>
 </div>
 
-<!-- MODAL: ADD FUNDS -->
 <div class="modal fade" id="addFundsModal" tabindex="-1" aria-labelledby="addFundsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -414,7 +416,6 @@
     </div>
 </div>
 
-<!-- MANAGE FRIEND CIRCLE MODAL -->
 <div class="modal fade" id="manageCircleModal" tabindex="-1" aria-labelledby="manageCircleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">

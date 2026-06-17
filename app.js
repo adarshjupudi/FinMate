@@ -15,6 +15,7 @@ const LocalStrategy = require('passport-local');
 const User = require('./models/user');
 const Expense = require('./models/expense');
 const Notification = require('./models/notification');
+const Lobby = require('./models/lobby'); // INJECTED LOBBY MODEL
 const userRoutes = require('./routes/users');
 const { isLoggedIn } = require('./middleware/index');
 
@@ -86,6 +87,9 @@ app.get('/', isLoggedIn, async (req, res) => {
             isRead: false 
         }).populate('sender', 'username').sort({ createdAt: -1 });
 
+        // FETCH ACTIVE LOBBIES FOR MODULE 4
+        const activeLobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username');
+
         const categoryTotals = { Canteen: 0, Academics: 0, Travel: 0, 'Junk Food': 0, Other: 0 };
         let totalSpent = 0;
         
@@ -113,12 +117,13 @@ app.get('/', isLoggedIn, async (req, res) => {
             expenses, 
             populatedUser, 
             pendingDebts,
+            activeLobbies,
             analytics: { categoryTotals, totalSpent, avgExpense },
             subStats: { totalMonthlySubCost: Math.round(totalMonthlySubCost), activeGhostsCount }
         });
     } catch (err) {
         req.flash('error', `Unable to retrieve ledger logs: ${err.message}`);
-        return res.render('dashboard/index', { expenses: [], populatedUser: req.user, pendingDebts: [], analytics: null, subStats: null });
+        return res.render('dashboard/index', { expenses: [], populatedUser: req.user, pendingDebts: [], activeLobbies: [], analytics: null, subStats: null });
     }
 });
 
@@ -292,68 +297,95 @@ app.post('/goals/:goalId/delete', isLoggedIn, async (req, res) => {
     } catch (err) { res.redirect('/goals'); }
 });
 
-// --- SAFE OVERRIDE GHOST TRACKER PATHWAYS ---
 app.get('/subscriptions', isLoggedIn, async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id);
-        // Explicitly ensuring relative string views map securely
-        res.render('subscriptions/index', { subscriptions: user.subscriptions });
-    } catch (err) {
-        req.flash('error', `Could not load Ghost Tracker: ${err.message}`);
-        res.redirect('/');
-    }
+    try { const user = await User.findById(req.user._id); res.render('subscriptions/index', { subscriptions: user.subscriptions }); } catch (err) { res.redirect('/'); }
 });
 
 app.post('/subscriptions', isLoggedIn, async (req, res) => {
     try {
         const { name, cost, billingCycle, lastUsed, cancelUrl } = req.body;
         const isGhost = (lastUsed === '1+ Month Ago');
-        
         const user = await User.findById(req.user._id);
-        user.subscriptions.push({ 
-            name, 
-            cost: Number(cost), 
-            billingCycle, 
-            lastUsed, 
-            cancelUrl: cancelUrl || '#',
-            isGhost 
-        });
-        await user.save();
-        req.flash('success', 'Subscription logged. Ghost scanning active.');
-        res.redirect('/subscriptions');
-    } catch (err) {
-        req.flash('error', `Failed to save subscription: ${err.message}`);
-        res.redirect('/subscriptions');
-    }
+        user.subscriptions.push({ name, cost: Number(cost), billingCycle, lastUsed, cancelUrl: cancelUrl || '#', isGhost });
+        await user.save(); req.flash('success', 'Subscription logged. Ghost scanning active.'); res.redirect('/subscriptions');
+    } catch (err) { res.redirect('/subscriptions'); }
 });
 
 app.post('/subscriptions/:subId/status', isLoggedIn, async (req, res) => {
     try {
-        const { lastUsed } = req.body;
-        const user = await User.findById(req.user._id);
-        const sub = user.subscriptions.id(req.params.subId);
-        
-        if (sub) {
-            sub.lastUsed = lastUsed;
-            sub.isGhost = (lastUsed === '1+ Month Ago');
-            await user.save();
-            req.flash('success', 'Activity status updated.');
-        }
+        const { lastUsed } = req.body; const user = await User.findById(req.user._id); const sub = user.subscriptions.id(req.params.subId);
+        if (sub) { sub.lastUsed = lastUsed; sub.isGhost = (lastUsed === '1+ Month Ago'); await user.save(); req.flash('success', 'Activity status updated.'); }
         res.redirect('/subscriptions');
-    } catch (err) {
-        res.redirect('/subscriptions');
-    }
+    } catch (err) { res.redirect('/subscriptions'); }
 });
 
 app.post('/subscriptions/:subId/delete', isLoggedIn, async (req, res) => {
+    try { const user = await User.findById(req.user._id); user.subscriptions.pull(req.params.subId); await user.save(); res.redirect('/subscriptions'); } catch (err) { res.redirect('/subscriptions'); }
+});
+
+// --- NEW: POOL CART LOBBY ROUTE IMPLEMENTATIONS ---
+app.get('/lobbies', isLoggedIn, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
-        user.subscriptions.pull(req.params.subId);
-        await user.save();
-        req.flash('success', 'Subscription removed from tracking.');
-        res.redirect('/subscriptions');
+        const lobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username').populate('members.user', 'username');
+        res.render('lobbies/index', { lobbies });
     } catch (err) {
-        res.redirect('/subscriptions');
+        req.flash('error', `Failed to load pool cart registries: ${err.message}`);
+        res.redirect('/');
+    }
+});
+
+app.post('/lobbies', isLoggedIn, async (req, res) => {
+    try {
+        const { storeName, targetAmount, initialItemCost, initialItemDesc } = req.body;
+        const numericCost = Number(initialItemCost);
+
+        const lobby = new Lobby({
+            host: req.user._id,
+            storeName,
+            targetAmount: Number(targetAmount),
+            currentAmount: numericCost,
+            members: [{ user: req.user._id, itemsDescription: initialItemDesc, itemCost: numericCost }]
+        });
+        await lobby.save();
+        req.flash('success', 'Delivery pool cart lobby established.');
+        res.redirect('/lobbies');
+    } catch (err) {
+        req.flash('error', `Lobby creation rejected: ${err.message}`);
+        res.redirect('/lobbies');
+    }
+});
+
+app.post('/lobbies/:id/join', isLoggedIn, async (req, res) => {
+    try {
+        const { itemCost, itemsDescription } = req.body;
+        const numericCost = Number(itemCost);
+
+        const lobby = await Lobby.findById(req.params.id);
+        lobby.members.push({ user: req.user._id, itemsDescription, itemCost: numericCost });
+        lobby.currentAmount += numericCost;
+        await lobby.save();
+
+        req.flash('success', 'Successfully merged items into the cart lobby!');
+        res.redirect('/lobbies');
+    } catch (err) {
+        req.flash('error', 'Failed to join delivery pool.');
+        res.redirect('/lobbies');
+    }
+});
+
+app.post('/lobbies/:id/close', isLoggedIn, async (req, res) => {
+    try {
+        const lobby = await Lobby.findById(req.params.id);
+        if (lobby.host.toString() !== req.user._id.toString()) {
+            req.flash('error', 'Unauthorized access.');
+            return res.redirect('/lobbies');
+        }
+        lobby.status = 'Closed';
+        await lobby.save();
+        req.flash('success', 'Lobby successfully closed.');
+        res.redirect('/lobbies');
+    } catch (err) {
+        res.redirect('/lobbies');
     }
 });
 
