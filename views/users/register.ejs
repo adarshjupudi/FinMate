@@ -6,7 +6,7 @@
             <div class="card-body p-4">
                 <h3 class="card-title text-center mb-4 fw-bold">Join FinMate</h3>
                 
-                <form action="/register" method="POST" novalidate class="needs-validation">
+                <form action="/register" method="POST" novalidate id="registerForm">
                     <div class="mb-3">
                         <label class="form-label" for="username">Campus Username</label>
                         <input class="form-control" type="text" id="username" name="username" placeholder="e.g., adarsh_j" required>
@@ -41,7 +41,7 @@
                     </div>
 
                     <div class="d-grid">
-                        <button class="btn btn-success btn-block fw-bold">Sign Up</button>
+                        <button class="btn btn-success btn-block fw-bold" id="submitBtn">Sign Up</button>
                     </div>
                 </form>
                 
@@ -57,18 +57,58 @@
     (function () 
     {
         'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
-        Array.from(forms).forEach(function (form) 
+        const form = document.querySelector('#registerForm')
+        const inputs = form.querySelectorAll('input')
+
+        // Reusable validation checker for a single input element
+        function validateInput(input) 
         {
-            form.addEventListener('submit', function (event) 
+            if (input.checkValidity()) 
             {
-                if (!form.checkValidity()) 
-                {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
+                input.classList.remove('is-invalid')
+                input.classList.add('is-valid')
+            } 
+            else 
+            {
+                input.classList.remove('is-valid')
+                input.classList.add('is-invalid')
+            }
+        }
+
+        // Attach real-time listeners to every input box
+        Array.from(inputs).forEach(function (input) 
+        {
+            // Triggers as soon as the user types, pastes, or deletes a character
+            input.addEventListener('input', function () 
+            {
+                validateInput(input)
+            })
+
+            // Triggers when a user clicks out of the input box
+            input.addEventListener('blur', function () 
+            {
+                validateInput(input)
+            })
         })
+
+        // Guard rails on final form submission
+        form.addEventListener('submit', function (event) 
+        {
+            let isFormValid = true
+            Array.from(inputs).forEach(function (input) 
+            {
+                validateInput(input)
+                if (!input.checkValidity()) 
+                {
+                    isFormValid = false
+                }
+            })
+
+            if (!isFormValid) 
+            {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+        }, false)
     })()
 </script>

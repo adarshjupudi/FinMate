@@ -6,7 +6,7 @@
             <div class="card-body p-4">
                 <h3 class="card-title text-center mb-4 fw-bold">Welcome Back</h3>
                 
-                <form action="/login" method="POST" novalidate class="needs-validation">
+                <form action="/login" method="POST" novalidate id="loginForm">
                     <div class="mb-3">
                         <label class="form-label" for="username">Campus Username</label>
                         <input class="form-control" type="text" id="username" name="username" placeholder="Username" required autofocus>
@@ -40,18 +40,53 @@
     (function () 
     {
         'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
-        Array.from(forms).forEach(function (form) 
+        const form = document.querySelector('#loginForm')
+        const inputs = form.querySelectorAll('input')
+
+        function validateInput(input) 
         {
-            form.addEventListener('submit', function (event) 
+            if (input.checkValidity()) 
             {
-                if (!form.checkValidity()) 
-                {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
+                input.classList.remove('is-invalid')
+                input.classList.add('is-valid')
+            } 
+            else 
+            {
+                input.classList.remove('is-valid')
+                input.classList.add('is-invalid')
+            }
+        }
+
+        Array.from(inputs).forEach(function (input) 
+        {
+            input.addEventListener('input', function () 
+            {
+                validateInput(input)
+            })
+
+            input.addEventListener('blur', function () 
+            {
+                validateInput(input)
+            })
         })
+
+        form.addEventListener('submit', function (event) 
+        {
+            let isFormValid = true
+            Array.from(inputs).forEach(function (input) 
+            {
+                validateInput(input)
+                if (!input.checkValidity()) 
+                {
+                    isFormValid = false
+                }
+            })
+
+            if (!isFormValid) 
+            {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+        }, false)
     })()
 </script>
