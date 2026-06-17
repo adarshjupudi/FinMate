@@ -6,8 +6,7 @@ const UserSchema = new Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
-        trim: true
+        unique: true
     },
     allowance: {
         type: Number,
@@ -25,6 +24,7 @@ const UserSchema = new Schema({
     }]
 }, { timestamps: true });
 
+// This line MUST run before compiling the model to attach authenticate()
 UserSchema.plugin(passportLocalMongoose);
 
 module.exports = mongoose.model('User', UserSchema);

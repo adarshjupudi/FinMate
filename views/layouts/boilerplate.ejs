@@ -30,93 +30,36 @@
             --finmate-border: #2D2540;
         }
 
-        body {
-            background-color: var(--finmate-bg) !important;
-            color: var(--finmate-text) !important;
-        }
-
-        .bg-body-tertiary {
-            background-color: var(--finmate-nav-bg) !important;
-        }
-
-        .border-bottom, .border-top {
-            border-color: var(--finmate-border) !important;
-        }
-
-        .text-primary, .navbar-brand {
-            color: var(--finmate-purple-heading) !important;
-        }
-
-        .text-secondary {
-            color: var(--finmate-text-muted) !important;
-        }
-
-        .bi {
-            color: var(--finmate-purple-heading);
-        }
+        body { background-color: var(--finmate-bg) !important; color: var(--finmate-text) !important; }
+        .bg-body-tertiary { background-color: var(--finmate-nav-bg) !important; }
+        .border-bottom, .border-top { border-color: var(--finmate-border) !important; }
+        .text-primary, .navbar-brand { color: var(--finmate-purple-heading) !important; }
+        .text-secondary { color: var(--finmate-text-muted) !important; }
+        .bi { color: var(--finmate-purple-heading); }
 
         .btn-finmate-solid {
-            background-color: var(--finmate-purple-heading) !important;
-            color: #FFFFFF !important;
-            border: 1px solid var(--finmate-purple-heading) !important;
-            border-radius: 6px;
-            font-weight: 500;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease-in-out;
+            background-color: var(--finmate-purple-heading) !important; color: #FFFFFF !important;
+            border: 1px solid var(--finmate-purple-heading) !important; border-radius: 6px;
+            font-weight: 500; height: 40px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out;
         }
-        .btn-finmate-solid:hover {
-            background-color: var(--finmate-purple-dark) !important;
-            border-color: var(--finmate-purple-dark) !important;
-            color: #FFFFFF !important;
-        }
+        .btn-finmate-solid:hover { background-color: var(--finmate-purple-dark) !important; border-color: var(--finmate-purple-dark) !important; color: #FFFFFF !important; }
 
         .btn-finmate-outline {
-            color: var(--finmate-purple-heading) !important;
-            border: 1px solid var(--finmate-purple-heading) !important;
-            background: transparent !important;
-            border-radius: 6px;
-            font-weight: 500;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease-in-out;
+            color: var(--finmate-purple-heading) !important; border: 1px solid var(--finmate-purple-heading) !important;
+            background: transparent !important; border-radius: 6px; font-weight: 500; height: 40px; display: inline-flex;
+            align-items: center; justify-content: center; transition: all 0.2s ease-in-out;
         }
-        .btn-finmate-outline:hover {
-            background-color: var(--finmate-purple-sub) !important;
-            color: #FFFFFF !important;
-            border-color: var(--finmate-purple-sub) !important;
-        }
+        .btn-finmate-outline:hover { background-color: var(--finmate-purple-sub) !important; color: #FFFFFF !important; border-color: var(--finmate-purple-sub) !important; }
 
-        .nav-button-container {
-            display: flex;
-            align-items: center;
-            height: 40px;
-        }
-
-        #themeToggler .bi {
-            color: var(--finmate-purple-heading) !important;
-        }
-
-        .notification-dropdown-menu {
-            width: 320px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            background-color: var(--finmate-card-bg);
-            border: 1px solid var(--finmate-border);
-        }
+        .nav-button-container { display: flex; align-items: center; height: 40px; }
+        #themeToggler .bi { color: var(--finmate-purple-heading) !important; }
+        .notification-dropdown-menu { width: 340px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background-color: var(--finmate-card-bg); border: 1px solid var(--finmate-border); }
     </style>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-bs-theme', savedTheme);
-            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.setAttribute('data-bs-theme', 'dark');
-            }
+            if (savedTheme) { document.documentElement.setAttribute('data-bs-theme', savedTheme); } 
+            else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { document.documentElement.setAttribute('data-bs-theme', 'dark'); }
         })();
     </script>
 </head>
@@ -125,8 +68,7 @@
     <nav class="navbar navbar-expand-lg border-bottom px-4 bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4" href="/">
-                <i class="bi bi-grid-1x2-fill"></i>
-                <span>FinMate</span>
+                <i class="bi bi-grid-1x2-fill"></i><span>FinMate</span>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -136,61 +78,61 @@
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <div class="navbar-nav align-items-center gap-3 mt-3 mt-lg-0">
                     <button class="btn border-0 px-2 d-flex align-items-center justify-content-center" id="themeToggler" type="button" aria-label="Toggle Theme Mode" style="height: 40px;">
-                        <i class="bi bi-sun-fill id-sun fs-5"></i>
-                        <i class="bi bi-moon-stars-fill id-moon fs-5 d-none"></i>
+                        <i class="bi bi-sun-fill id-sun fs-5"></i><i class="bi bi-moon-stars-fill id-moon fs-5 d-none"></i>
                     </button>
 
                     <% if(!currentUser) { %>
-                        <div class="nav-button-container">
-                            <a class="nav-link btn btn-finmate-outline px-4 gap-2" href="/login">
-                                <i class="bi bi-box-arrow-in-right m-0 p-0" style="color: inherit;"></i> Login
-                            </a>
-                        </div>
-                        <div class="nav-button-container">
-                            <a class="nav-link btn btn-finmate-solid px-4 gap-2" href="/register">
-                                <i class="bi bi-person-plus-fill m-0 p-0" style="color: inherit;"></i> Sign Up
-                            </a>
-                        </div>
+                        <div class="nav-button-container"><a class="nav-link btn btn-finmate-outline px-4 gap-2" href="/login"><i class="bi bi-box-arrow-in-right m-0 p-0" style="color: inherit;"></i> Login</a></div>
+                        <div class="nav-button-container"><a class="nav-link btn btn-finmate-solid px-4 gap-2" href="/register"><i class="bi bi-person-plus-fill m-0 p-0" style="color: inherit;"></i> Sign Up</a></div>
                     <% } else { %>
-                        <!-- DYNAMIC LOGGED-IN NOTIFICATION ALERTS DROPDOWN MODULE -->
+                        
                         <div class="dropdown me-1">
-                            <button class="btn position-relative border-0 p-2 d-flex align-items-center justify-content-center" type="button" id="notificationMenuButton" data-bs-toggle="dropdown" aria-expanded="false" style="height: 40px; width: 40px;">
+                            <button class="btn position-relative border-0 p-2 d-flex align-items-center justify-content-center" type="button" id="notificationMenuButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="height: 40px; width: 40px;">
                                 <i class="bi bi-bell-fill fs-5"></i>
                                 <% if (unreadNotifications && unreadNotifications.length > 0) { %>
-                                    <span class="position-absolute top-1 start-100 translate-middle badge rounded-circle bg-danger p-1" style="font-size: 0.6rem; transform: translate(-70%, 10%) !important;">
-                                        <%= unreadNotifications.length %>
-                                    </span>
+                                    <span id="globalAlertBadge" class="position-absolute top-1 start-100 translate-middle badge rounded-circle bg-danger p-1" style="font-size: 0.6rem; transform: translate(-70%, 10%) !important;"><%= unreadNotifications.length %></span>
                                 <% } %>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end notification-dropdown-menu p-0 overflow-hidden" aria-labelledby="notificationMenuButton">
+                                <!-- UPDATED: Clear All Button Inject -->
                                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="background-color: var(--finmate-nav-bg);">
                                     <span class="fw-bold small" style="color: var(--finmate-purple-heading);">Campus Alerts</span>
                                     <% if (unreadNotifications && unreadNotifications.length > 0) { %>
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 text-xs"><%= unreadNotifications.length %> New</span>
+                                        <button id="clearAllNotifications" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" style="font-size: 0.75rem;">Clear All</button>
                                     <% } %>
                                 </div>
-                                <div style="max-height: 280px; overflow-y: auto;">
+                                <div id="notificationListBody" style="max-height: 320px; overflow-y: auto;">
                                     <% if (unreadNotifications && unreadNotifications.length > 0) { %>
                                         <% unreadNotifications.forEach(notify => { %>
-                                            <li>
-                                                <a class="dropdown-item p-3 border-bottom d-flex gap-3 align-items-start text-wrap text-reset" href="<%= notify.linkUrl %>">
-                                                    <div class="rounded-circle bg-primary-subtle p-2 d-flex align-items-center justify-content-center mt-0.5">
-                                                        <% if(notify.type === 'DEBT_OWED') { %><i class="bi bi-person-dash-fill text-primary small m-0 p-0"></i>
+                                            <li class="notify-item-row" data-id="<%= notify._id %>" style="cursor: pointer; list-style: none;">
+                                                <div class="p-3 border-bottom d-flex gap-3 align-items-start text-wrap text-reset" style="background-color: var(--finmate-card-bg); transition: background 0.2s;">
+                                                    <div class="rounded-circle bg-primary-subtle p-2 d-flex align-items-center justify-content-center mt-1">
+                                                        <% if(notify.type === 'FRIEND_REQUEST') { %><i class="bi bi-person-plus-fill text-primary small m-0 p-0"></i>
+                                                        <% } else if(notify.type === 'REQUEST_ACCEPTED') { %><i class="bi bi-person-check-fill text-success small m-0 p-0"></i>
+                                                        <% } else if(notify.type === 'DEBT_OWED') { %><i class="bi bi-person-dash-fill text-danger small m-0 p-0"></i>
                                                         <% } else if(notify.type === 'PAYMENT_MARKED') { %><i class="bi bi-cash-stack text-success small m-0 p-0"></i>
-                                                        <% } else { %><i class="bi bi-lightning-charge-fill text-warning small m-0 p-0"></i><% } %>
+                                                        <% } else if(notify.type === 'POOL_OPENED') { %><i class="bi bi-lightning-charge-fill text-warning small m-0 p-0"></i><% } %>
                                                     </div>
-                                                    <div>
-                                                        <p class="m-0 small fw-medium" style="line-height: 1.3;"><%= notify.message %></p>
-                                                        <span class="text-secondary tracking-tight" style="font-size: 0.7rem;"><%= new Date(notify.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
+                                                    <div class="w-100">
+                                                        <p class="m-0 small fw-medium" style="line-height: 1.3; color: var(--finmate-text);"><%= notify.message %></p>
+                                                        <span class="text-secondary tracking-tight d-block mb-1" style="font-size: 0.7rem;"><%= new Date(notify.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
+                                                        
+                                                        <% if(notify.type === 'FRIEND_REQUEST') { %>
+                                                            <div class="d-flex gap-2 mt-2">
+                                                                <form action="/accept-friend/<%= notify._id %>" method="POST" class="m-0">
+                                                                    <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="font-size: 0.75rem; font-weight: 500;">Accept</button>
+                                                                </form>
+                                                                <form action="/decline-friend/<%= notify._id %>" method="POST" class="m-0">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem; font-weight: 500;">Decline</button>
+                                                                </form>
+                                                            </div>
+                                                        <% } %>
                                                     </div>
-                                                </a>
+                                                </div>
                                             </li>
                                         <% }) %>
                                     <% } else { %>
-                                        <div class="text-center py-4 text-secondary">
-                                            <i class="bi bi-bell-slash text-muted d-block mb-1 fs-4"></i>
-                                            <span class="small">All caught up! No alerts found.</span>
-                                        </div>
+                                        <div class="text-center py-4 text-secondary"><i class="bi bi-bell-slash text-muted d-block mb-1 fs-4"></i><span class="small">All caught up! No alerts found.</span></div>
                                     <% } %>
                                 </div>
                             </ul>
@@ -210,67 +152,81 @@
         </div>
     </nav>
 
-    <!-- FLASH MESSAGE OVERLAYS -->
     <% if(success && success.length) { %>
-        <div class="container mt-4 mb-0">
-            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
-                <i class="bi bi-check-circle-fill me-2 text-success"></i><%= success %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
+        <div class="container mt-4 mb-0"><div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert"><i class="bi bi-check-circle-fill me-2 text-success"></i><%= success %><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div></div>
     <% } %>
-
     <% if(error && error.length) { %>
-        <div class="container mt-4 mb-0">
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i><%= error %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
+        <div class="container mt-4 mb-0"><div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert"><i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i><%= error %><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div></div>
     <% } %>
 
-    <main class="flex-grow-1">
-        <%- body %>
-    </main>
+    <main class="flex-grow-1"><%- body %></main>
 
     <footer class="footer py-4 mt-auto border-top px-4 bg-body-tertiary">
         <div class="container-fluid d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
-            <div class="d-flex align-items-center gap-2 fs-5 fw-bold text-primary">
-                FinMate
-            </div>
-            <div class="d-flex gap-4 fs-6">
-                <a href="#" class="text-secondary text-decoration-none">About</a>
-                <a href="#" class="text-secondary text-decoration-none">Help</a>
-            </div>
-            <div class="d-flex gap-3 fs-5 text-secondary">
-                <a href="#" class="text-reset"><i class="bi bi-facebook"></i></a>
-                <a href="#" class="text-reset"><i class="bi bi-twitter"></i></a>
-                <a href="#" class="text-reset"><i class="bi bi-instagram"></i></a>
-            </div>
+            <div class="d-flex align-items-center gap-2 fs-5 fw-bold text-primary">FinMate</div>
+            <div class="d-flex gap-4 fs-6"><a href="#" class="text-secondary text-decoration-none">About</a><a href="#" class="text-secondary text-decoration-none">Help</a></div>
+            <div class="d-flex gap-3 fs-5 text-secondary"><a href="#" class="text-reset"><i class="bi bi-facebook"></i></a><a href="#" class="text-reset"><i class="bi bi-twitter"></i></a><a href="#" class="text-reset"><i class="bi bi-instagram"></i></a></div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // MASS DISMISS ROUTER
+        document.getElementById('clearAllNotifications')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch('/notifications/clear-all', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    document.querySelectorAll('.notify-item-row').forEach(row => row.remove());
+                    const badge = document.getElementById('globalAlertBadge');
+                    if (badge) badge.remove();
+                    e.target.remove();
+                    document.getElementById('notificationListBody').innerHTML = '<div class="text-center py-4 text-secondary"><i class="bi bi-bell-slash text-muted d-block mb-1 fs-4"></i><span class="small">All caught up! No alerts found.</span></div>';
+                }
+            } catch(err) { console.error('Clear all error:', err); }
+        });
+
+        document.querySelectorAll('.notify-item-row').forEach(row => {
+            row.addEventListener('click', async (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('form')) return;
+                
+                const id = row.getAttribute('data-id');
+                try {
+                    const res = await fetch(`/notifications/${id}/read`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        row.style.opacity = '0';
+                        setTimeout(() => {
+                            row.remove();
+                            const badge = document.getElementById('globalAlertBadge');
+                            if(badge) {
+                                let currentCount = parseInt(badge.textContent) - 1;
+                                if(currentCount <= 0) {
+                                    badge.remove();
+                                    document.getElementById('clearAllNotifications')?.remove();
+                                    document.getElementById('notificationListBody').innerHTML = '<div class="text-center py-4 text-secondary"><i class="bi bi-bell-slash text-muted d-block mb-1 fs-4"></i><span class="small">All caught up! No alerts found.</span></div>';
+                                } else {
+                                    badge.textContent = currentCount;
+                                }
+                            }
+                        }, 200);
+                    }
+                } catch(err) { console.error('Alert read error:', err); }
+            });
+        });
+
         const themeToggler = document.getElementById('themeToggler');
         const updateToggleIcons = (theme) => {
             const sun = themeToggler.querySelector('.id-sun');
             const moon = themeToggler.querySelector('.id-moon');
-            if (theme === 'dark') {
-                sun.classList.add('d-none');
-                moon.classList.remove('d-none');
-            } else {
-                moon.classList.add('d-none');
-                sun.classList.remove('d-none');
-            }
+            if (theme === 'dark') { sun.classList.add('d-none'); moon.classList.remove('d-none'); } 
+            else { moon.classList.add('d-none'); sun.classList.remove('d-none'); }
         };
-
         updateToggleIcons(document.documentElement.getAttribute('data-bs-theme'));
-
         themeToggler.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme');
             const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
             document.documentElement.setAttribute('data-bs-theme', targetTheme);
             localStorage.setItem('theme', targetTheme);
             updateToggleIcons(targetTheme);

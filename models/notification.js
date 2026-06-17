@@ -14,7 +14,7 @@ const NotificationSchema = new Schema({
     type: {
         type: String,
         required: true,
-        enum: ['DEBT_OWED', 'PAYMENT_MARKED', 'POOL_OPENED'] // Your 3 explicit use cases
+        enum: ['DEBT_OWED', 'PAYMENT_MARKED', 'POOL_OPENED', 'FRIEND_REQUEST', 'REQUEST_ACCEPTED']
     },
     message: {
         type: String,
@@ -25,7 +25,7 @@ const NotificationSchema = new Schema({
         default: false
     },
     linkUrl: {
-        type: String, // Dynamic routing target to leap straight to the relevant feature panel
+        type: String,
         default: '/'
     }
 }, { timestamps: true });

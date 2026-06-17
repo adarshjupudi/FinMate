@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
+const mongoose = require('mongoose');
 const User = require('../models/user');
+const Notification = require('../models/notification');
 
 // --- RESPONSIVE VALIDATION API ENDPOINTS ---
-
-// Check if username already exists instantly
 router.get('/check-username', async (req, res) => {
     try {
         const { username } = req.query;
@@ -16,7 +16,6 @@ router.get('/check-username', async (req, res) => {
     }
 });
 
-// Check if email already exists instantly
 router.get('/check-email', async (req, res) => {
     try {
         const { email } = req.query;
@@ -27,66 +26,171 @@ router.get('/check-email', async (req, res) => {
     }
 });
 
-// --- NEW: PEER SEARCH API ---
-// Allows the frontend to query the database for friends dynamically
+// --- PEER SEARCH API ---
 router.get('/search', async (req, res) => {
-    // Protect the route so only logged-in users can search the database
     if (!req.isAuthenticated()) {
         return res.status(401).json({ error: 'Unauthorized access' });
     }
-    
     try {
         const { username } = req.query;
         if (!username) return res.json([]);
         
-        // Find up to 5 matching usernames, excluding the person currently searching
         const users = await User.find({ 
             username: { $regex: username, $options: 'i' },
             _id: { $ne: req.user._id } 
         }).limit(5);
-        
         res.json(users);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
-// --- REGISTER USER ROUTES ---
-router.get('/register', (req, res) => {
-    if (req.isAuthenticated()) {
-        return res.redirect('/');
+// --- NOTIFICATION CLEAR ENGINE HANDLERS ---
+router.post('/notifications/:id/read', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false });
+    try {
+        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+            await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+            return res.json({ success: true });
+        }
+        res.status(400).json({ success: false, error: 'Invalid ID' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
     }
+});
+
+// NEW: CLEAR ALL NOTIFICATIONS
+router.post('/notifications/clear-all', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false });
+    try {
+        await Notification.updateMany({ recipient: req.user._id, isRead: false }, { isRead: true });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// --- TWO-WAY FRIEND REQUEST SYSTEM ---
+router.post('/send-friend-request', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ success: false, error: 'Unauthorized' });
+    try {
+        const { friendId } = req.body;
+        if (!friendId || !mongoose.Types.ObjectId.isValid(friendId)) {
+            return res.json({ success: false, error: 'Invalid or missing user identifier.' });
+        }
+        const currentUser = await User.findById(req.user._id);
+        if (currentUser.friends.includes(friendId)) {
+            return res.json({ success: false, error: 'User is already in your circle.' });
+        }
+        const existingRequest = await Notification.findOne({
+            sender: req.user._id,
+            recipient: friendId,
+            type: 'FRIEND_REQUEST',
+            isRead: false
+        });
+        if (existingRequest) {
+            return res.json({ success: false, error: 'Request already pending.' });
+        }
+        const newNotification = new Notification({
+            sender: req.user._id,
+            recipient: friendId,
+            type: 'FRIEND_REQUEST',
+            message: `${req.user.username} sent you a friend request.`,
+            linkUrl: '#'
+        });
+        await newNotification.save();
+        res.json({ success: true, message: 'Request sent!' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.post('/accept-friend/:notifyId', async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.notifyId)) {
+            req.flash('error', 'Invalid reference ID.');
+            return res.redirect('/');
+        }
+        const notification = await Notification.findById(req.params.notifyId);
+        if (!notification || notification.recipient.toString() !== req.user._id.toString()) {
+            req.flash('error', 'Invalid request.');
+            return res.redirect('/');
+        }
+        await User.findByIdAndUpdate(req.user._id, { $addToSet: { friends: notification.sender } });
+        await User.findByIdAndUpdate(notification.sender, { $addToSet: { friends: req.user._id } });
+        notification.isRead = true;
+        await notification.save();
+
+        const confirmNotification = new Notification({
+            sender: req.user._id,
+            recipient: notification.sender,
+            type: 'REQUEST_ACCEPTED',
+            message: `${req.user.username} accepted your friend request!`
+        });
+        await confirmNotification.save();
+        req.flash('success', 'Friend added to your circle!');
+        res.redirect('/');
+    } catch (e) {
+        req.flash('error', 'Something went wrong.');
+        res.redirect('/');
+    }
+});
+
+router.post('/decline-friend/:notifyId', async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    try {
+        if (mongoose.Types.ObjectId.isValid(req.params.notifyId)) {
+            await Notification.findByIdAndUpdate(req.params.notifyId, { isRead: true });
+        }
+        res.redirect('/');
+    } catch (e) {
+        res.redirect('/');
+    }
+});
+
+router.post('/remove-friend', async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    try {
+        const { friendId } = req.body;
+        if (!friendId || !mongoose.Types.ObjectId.isValid(friendId)) {
+            req.flash('error', 'No valid friend identifier provided.');
+            return res.redirect('/');
+        }
+        await User.findByIdAndUpdate(req.user._id, { $pull: { friends: friendId } });
+        await User.findByIdAndUpdate(friendId, { $pull: { friends: req.user._id } });
+        req.flash('success', 'User removed from your friend circle.');
+        res.redirect('/');
+    } catch (e) {
+        req.flash('error', 'Failed to disconnect user from your circle.');
+        res.redirect('/');
+    }
+});
+
+// --- AUTHENTICATION ROUTES ---
+router.get('/register', (req, res) => {
+    if (req.isAuthenticated()) return res.redirect('/');
     res.render('users/register'); 
 });
 
 router.post('/register', async (req, res, next) => {
     try {
         const { username, email, allowance, password } = req.body;
-        
-        // Strict duplicate checks to prevent saving conflicts
         const existingUser = await User.findOne({ username: username });
         if (existingUser) {
-            req.flash('error', 'A user with the given username is already registered.');
+            req.flash('error', 'Username is already registered.');
             return res.redirect('/register');
         }
-
         const existingEmail = await User.findOne({ email: email });
         if (existingEmail) {
-            req.flash('error', 'A user with that email address already exists.');
+            req.flash('error', 'Email address already exists.');
             return res.redirect('/register');
         }
-        
-        const user = new User({ 
-            email: email, 
-            username: username, 
-            allowance: allowance ? Number(allowance) : 0 
-        });
-        
+        const user = new User({ email, username, allowance: allowance ? Number(allowance) : 0 });
         const registeredUser = await User.register(user, password);
-        
         req.login(registeredUser, err => {
             if (err) return next(err);
-            req.flash('success', 'Welcome to FinMate! Let\'s manage those campus expenses.');
+            req.flash('success', 'Welcome to FinMate!');
             res.redirect('/');
         });
     } catch (e) {
@@ -95,11 +199,8 @@ router.post('/register', async (req, res, next) => {
     }
 });
 
-// --- LOGIN ROUTES ---
 router.get('/login', (req, res) => {
-    if (req.isAuthenticated()) {
-        return res.redirect('/');
-    }
+    if (req.isAuthenticated()) return res.redirect('/');
     res.render('users/login');
 });
 
@@ -107,14 +208,13 @@ router.post('/login', passport.authenticate('local', {
     failureFlash: true,
     failureRedirect: '/login'
 }), (req, res) => {
-    req.flash('success', 'Welcome back to FinMate!');
+    req.flash('success', 'Welcome back!');
     res.redirect('/');
 });
 
-// --- LOGOUT ROUTE ---
 router.get('/logout', (req, res) => {
     req.logout(); 
-    req.flash('success', 'Logged out successfully. See you around!');
+    req.flash('success', 'Logged out successfully.');
     res.redirect('/');
 });
 
