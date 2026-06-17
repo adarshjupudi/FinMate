@@ -4,29 +4,39 @@ const User = require('../models/user');
 const passport = require('passport');
 
 // --- REGISTER FORM ROUTE ---
-router.get('/register', (req, res) => {
+router.get('/register', (req, res) => 
+{
     res.render('users/register');
 });
 
 // --- REGISTER POST ROUTE ---
-router.post('/register', async (req, res, next) => {
-    try {
-        const { email, username, password, allowance } = req.body;
-        const user = new User({ email, username, allowance });
+router.post('/register', async (req, res, next) => 
+{
+    try 
+    {
+        const { email, username, password } = req.body;
+        const user = new User({ email, username }); // No allowance passed here anymore
         const registeredUser = await User.register(user, password);
-        req.login(registeredUser, err => {
-            if (err) return next(err);
+        req.login(registeredUser, err => 
+        {
+            if (err) 
+            {
+                return next(err);
+            }
             req.flash('success', 'Welcome to FinMate, your campus financial wingman!');
             res.redirect('/');
         });
-    } catch (e) {
+    } 
+    catch (e) 
+    {
         req.flash('error', e.message);
         res.redirect('/register');
     }
 });
 
 // --- LOGIN FORM ROUTE ---
-router.get('/login', (req, res) => {
+router.get('/login', (req, res) => 
+{
     res.render('users/login');
 });
 
@@ -34,15 +44,21 @@ router.get('/login', (req, res) => {
 router.post('/login', passport.authenticate('local', { 
     failureFlash: true, 
     failureRedirect: '/login' 
-}), (req, res) => {
+}), (req, res) => 
+{
     req.flash('success', `Welcome back, ${req.user.username}!`);
     res.redirect('/');
 });
 
 // --- LOGOUT ROUTE ---
-router.get('/logout', (req, res, next) => {
-    req.logout(function(err) {
-        if (err) { return next(err); }
+router.get('/logout', (req, res, next) => 
+{
+    req.logout(function(err) 
+    {
+        if (err) 
+        { 
+            return next(err); 
+        }
         req.flash('success', 'Logged out successfully. See you around campus!');
         res.redirect('/');
     });

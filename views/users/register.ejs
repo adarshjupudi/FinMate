@@ -1,0 +1,36 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4 fw-bold">Join FinMate</h3>
+                
+                <form action="/register" method="POST" novalidate class="needs-validation">
+                    <div class="mb-3">
+                        <label class="form-label" for="username">Campus Username</label>
+                        <input class="form-control" type="text" id="username" name="username" placeholder="e.g., adarsh_j" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input class="form-control" type="email" id="email" name="email" placeholder="name@campus.edu" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="password">Password</label>
+                        <input class="form-control" type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-success btn-block fw-bold">Sign Up</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">Already have an account? <a href="/login" class="text-success text-decoration-none">Log In</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

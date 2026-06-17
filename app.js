@@ -7,6 +7,7 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const path = require('path');
+const engine = require('ejs-mate');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
@@ -31,6 +32,7 @@ db.once("open", () =>
 });
 
 // --- APP CONFIGURATION ---
+app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
