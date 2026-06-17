@@ -27,6 +27,30 @@ router.get('/check-email', async (req, res) => {
     }
 });
 
+// --- NEW: PEER SEARCH API ---
+// Allows the frontend to query the database for friends dynamically
+router.get('/search', async (req, res) => {
+    // Protect the route so only logged-in users can search the database
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Unauthorized access' });
+    }
+    
+    try {
+        const { username } = req.query;
+        if (!username) return res.json([]);
+        
+        // Find up to 5 matching usernames, excluding the person currently searching
+        const users = await User.find({ 
+            username: { $regex: username, $options: 'i' },
+            _id: { $ne: req.user._id } 
+        }).limit(5);
+        
+        res.json(users);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- REGISTER USER ROUTES ---
 router.get('/register', (req, res) => {
     if (req.isAuthenticated()) {
@@ -39,6 +63,7 @@ router.post('/register', async (req, res, next) => {
     try {
         const { username, email, allowance, password } = req.body;
         
+        // Strict duplicate checks to prevent saving conflicts
         const existingUser = await User.findOne({ username: username });
         if (existingUser) {
             req.flash('error', 'A user with the given username is already registered.');
