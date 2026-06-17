@@ -1,9 +1,11 @@
 <% layout('layouts/boilerplate') %>
 
+<!-- Injecting Chart.js via direct secure pipeline CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container-fluid py-4 px-4 animate-fade-in">
     
+    <!-- TOP SECTION: HIGH-CONTRAST BUDGET ALIGNMENT BANNER -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--finmate-purple-heading), var(--finmate-purple-dark)); color: #FFFFFF;">
@@ -33,15 +35,17 @@
         </div>
     </div>
 
+    <!-- MAIN CORE MATRIX: THE 4 CAMPUS FEATURES GRID -->
     <div class="row g-4">
         
+        <!-- MODULE 1: PERSONAL MONEY TRACKER -->
         <div class="col-xl-7 col-lg-12">
             <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">1. Money Tracker & Analysis</h5>
-                            <small class="text-secondary">Chronological ledger of personal outlays</small>
+                            <small class="text-secondary">Chronological ledger of outlays and credits</small>
                         </div>
                         <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-medium">Active Analytics</span>
                     </div>
@@ -80,33 +84,41 @@
                             <div class="col-md-6">
                                 <h6 class="fw-bold small text-secondary text-uppercase tracking-wider mb-3">Transaction History</h6>
                                 <div class="d-flex flex-column gap-3" style="max-height: 310px; overflow-y: auto; padding-right: 4px;">
+                                    
                                     <% expenses.forEach(expense => { %>
-                                        <% if(expense.splitType === 'None') { %>
-                                            <div class="p-3 border d-flex align-items-center justify-content-between bg-body rounded-3 shadow-sm-hover">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center border bg-light" style="width: 36px; height: 36px; flex-shrink: 0;">
-                                                        <% if(expense.category === 'Canteen') { %><i class="bi bi-cup-hot text-primary fs-6"></i>
-                                                        <% } else if(expense.category === 'Academics') { %><i class="bi bi-book text-primary fs-6"></i>
-                                                        <% } else if(expense.category === 'Travel') { %><i class="bi bi-car-front text-primary fs-6"></i>
-                                                        <% } else if(expense.category === 'Junk Food') { %><i class="bi bi-egg-fried text-primary fs-6"></i>
-                                                        <% } else { %><i class="bi bi-tag text-primary fs-6"></i><% } %>
-                                                    </div>
-                                                    <div style="min-width: 0;">
-                                                        <h6 class="mb-0 fw-bold text-truncate small" style="max-width: 110px;"><%= expense.description %></h6>
-                                                        <span class="text-secondary d-block" style="font-size: 0.7rem;"><%= expense.category %></span>
-                                                    </div>
+                                        <div class="p-3 border d-flex align-items-center justify-content-between bg-body rounded-3 shadow-sm-hover">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center border bg-light" style="width: 36px; height: 36px; flex-shrink: 0;">
+                                                    <% if(expense.splitType === 'Settlement') { %><i class="bi bi-arrow-down-left text-success fs-6"></i>
+                                                    <% } else if(expense.splitType === 'Equi-Split' || expense.splitType === 'Custom Split') { %><i class="bi bi-pie-chart text-primary fs-6"></i>
+                                                    <% } else if(expense.category === 'Canteen') { %><i class="bi bi-cup-hot text-primary fs-6"></i>
+                                                    <% } else if(expense.category === 'Academics') { %><i class="bi bi-book text-primary fs-6"></i>
+                                                    <% } else if(expense.category === 'Travel') { %><i class="bi bi-car-front text-primary fs-6"></i>
+                                                    <% } else if(expense.category === 'Junk Food') { %><i class="bi bi-egg-fried text-primary fs-6"></i>
+                                                    <% } else { %><i class="bi bi-tag text-primary fs-6"></i><% } %>
                                                 </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="fw-bold text-primary small">₹<%= expense.amount %></span>
-                                                    <form action="/expenses/<%= expense._id %>/delete" method="POST" class="m-0 p-0" onsubmit="return confirm('Delete this record entry?');">
-                                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0 border-0">
-                                                            <i class="bi bi-trash3-fill fs-6 opacity-75"></i>
-                                                        </button>
-                                                    </form>
+                                                <div style="min-width: 0;">
+                                                    <h6 class="mb-0 fw-bold text-truncate small" style="max-width: 110px;"><%= expense.description %></h6>
+                                                    <span class="text-secondary d-block" style="font-size: 0.7rem;">
+                                                        <%= expense.splitType === 'Settlement' ? 'Incoming Credit' : (expense.splitType !== 'None' ? `Split Bill • ${expense.category}` : expense.category) %>
+                                                    </span>
                                                 </div>
                                             </div>
-                                        <% } %>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <% if(expense.splitType === 'Settlement') { %>
+                                                    <span class="fw-bold text-success small">+₹<%= expense.amount %></span>
+                                                <% } else { %>
+                                                    <span class="fw-bold text-primary small">₹<%= expense.amount %></span>
+                                                <% } %>
+                                                <form action="/expenses/<%= expense._id %>/delete" method="POST" class="m-0 p-0" onsubmit="return confirm('Delete this record entry?');">
+                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 border-0">
+                                                        <i class="bi bi-trash3-fill fs-6 opacity-75"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     <% }) %>
+
                                 </div>
                             </div>
 
@@ -130,6 +142,7 @@
         <div class="col-xl-5 col-lg-12">
             <div class="row g-4">
                 
+                <!-- MODULE 2: FRIEND CIRCLE & SPLITTER PANEL -->
                 <div class="col-12">
                     <div class="card border shadow-sm" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4">
@@ -150,20 +163,20 @@
                             
                             <% if (typeof pendingDebts !== 'undefined' && pendingDebts.length > 0) { %>
                                 <div class="mb-4 mt-2">
-                                    <h6 class="small fw-bold text-danger text-uppercase tracking-wider mb-2"><i class="bi bi-exclamation-circle-fill"></i> Pending Lending Requests</h6>
+                                    <h6 class="small fw-bold text-uppercase tracking-wider mb-2" style="color: var(--finmate-purple-heading);"><i class="bi bi-exclamation-circle-fill"></i> Pending Lending Requests</h6>
                                     <div class="d-flex flex-column gap-2">
                                         <% pendingDebts.forEach(debt => { %>
-                                            <div class="p-3 border rounded-3 bg-danger-subtle border-danger-subtle d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                                            <div class="p-3 border rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 shadow-sm" style="background-color: var(--finmate-card-bg); border-color: var(--finmate-purple-sub) !important;">
                                                 <div>
-                                                    <p class="m-0 small fw-bold text-dark"><%= debt.message %></p>
-                                                    <span class="text-muted d-block" style="font-size: 0.7rem;"><%= new Date(debt.createdAt).toLocaleDateString() %></span>
+                                                    <p class="m-0 small fw-medium" style="color: var(--finmate-text);"><%= debt.message %></p>
+                                                    <span class="text-secondary d-block mt-1" style="font-size: 0.7rem;"><%= new Date(debt.createdAt).toLocaleDateString() %></span>
                                                 </div>
                                                 <div class="d-flex gap-2 align-self-end align-self-sm-center">
                                                     <form action="/debts/<%= debt._id %>/accept" method="POST" class="m-0 p-0">
-                                                        <button type="submit" class="btn btn-sm btn-success px-3 py-1 fw-bold text-xs" style="font-size: 0.75rem;">Approve & Pay</button>
+                                                        <button type="submit" class="btn btn-sm btn-finmate-solid px-3 py-1 fw-medium text-xs" style="font-size: 0.75rem;">Approve & Pay</button>
                                                     </form>
                                                     <form action="/debts/<%= debt._id %>/decline" method="POST" class="m-0 p-0">
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger px-3 py-1 text-xs" style="font-size: 0.75rem;">Decline</button>
+                                                        <button type="submit" class="btn btn-sm btn-finmate-outline px-3 py-1 text-xs" style="font-size: 0.75rem;">Decline</button>
                                                     </form>
                                                 </div>
                                             </div>
@@ -202,7 +215,7 @@
                     </div>
                 </div>
 
-                <!-- MODULE 3: GHOST SUBSCRIPTION TRACKER -->
+                <!-- MODULE 3: GHOST TRACKER (FIXED BACKGROUND HIGH-CONTRAST DISPLAY) -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -213,9 +226,31 @@
                                 </div>
                                 <small class="text-secondary d-block">Unutilized streaming plan monitors</small>
                             </div>
-                            <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
-                                <span class="small text-secondary">No hidden subscription leak alerts logged.</span>
-                            </div>
+                            
+                            <% if (typeof subStats !== 'undefined' && subStats !== null && populatedUser.subscriptions && populatedUser.subscriptions.length > 0) { %>
+                                <!-- TEXT ACCENT CORRECTION: Gray input overlay removed to maximize dark mode legibility -->
+                                <div class="p-3 border rounded-3 mb-3" style="background-color: var(--finmate-nav-bg); border-color: var(--finmate-border) !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-medium text-secondary">Total Recurring:</span>
+                                        <span class="fw-bold" style="color: var(--finmate-text);">Stream ₹<%= subStats.totalMonthlySubCost %> /mo</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small fw-medium text-secondary">Active Ghosts:</span>
+                                        <% if (subStats.activeGhostsCount > 0) { %>
+                                            <span class="badge bg-danger text-white rounded-pill px-2"><%= subStats.activeGhostsCount %> Detected</span>
+                                        <% } else { %>
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-2">Clean</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <a href="/subscriptions" class="btn btn-finmate-outline btn-sm w-100 fw-bold">Manage Plans</a>
+                            <% } else { %>
+                                <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
+                                    <span class="small text-secondary d-block mb-2">No subscriptions currently tracked.</span>
+                                    <a href="/subscriptions" class="btn btn-finmate-solid btn-sm px-4">Start Tracking</a>
+                                </div>
+                            <% } %>
+
                         </div>
                     </div>
                 </div>
@@ -282,7 +317,7 @@
     </div>
 </div>
 
-<!-- MODAL: DEDICATED PEER BILL SPLITTER (BUG FIXED: NO HIDDEN INPUTS) -->
+<!-- MODAL: DEDICATED PEER BILL SPLITTER LAYER -->
 <div class="modal fade" id="splitBillModal" tabindex="-1" aria-labelledby="splitBillModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -291,7 +326,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="/expenses" method="POST">
-                <!-- HIDDEN INPUT WAS REMOVED FROM HERE -->
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="splitDescription" class="form-label small fw-medium">Group Outlay Description</label>
@@ -405,7 +439,6 @@
     </div>
 </div>
 
-<!-- CLIENT PROTOCOL: CALCULATION ENGINES FOR BILL CO-SPLITTING -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const splitTypeSelect = document.getElementById('splitTypeSelect');

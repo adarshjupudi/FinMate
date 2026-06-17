@@ -1,0 +1,81 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container py-5 animate-fade-in" style="max-width: 800px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-finmate-outline btn-sm px-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h3 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">
+            <i class="bi bi-bullseye"></i> Financial Goals
+        </h3>
+    </div>
+
+    <!-- NEW GOAL INPUT PANEL -->
+    <div class="card border shadow-sm mb-5" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+        <div class="card-body p-4">
+            <h6 class="fw-bold text-secondary text-uppercase tracking-wider mb-3">Plant a New Target</h6>
+            <form action="/goals" method="POST">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-7">
+                        <label for="title" class="form-label small fw-medium">What are you saving for?</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="e.g., Mechanical Keyboard" required style="border-radius: 8px;">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="targetAmount" class="form-label small fw-medium">Target (₹)</label>
+                        <input type="number" class="form-control" id="targetAmount" name="targetAmount" min="1" placeholder="5000" required style="border-radius: 8px;">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-finmate-solid w-100 fw-bold" style="border-radius: 8px; height: 38px;">Add Goal</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ACTIVE & COMPLETED GOALS LIST -->
+    <h6 class="fw-bold text-secondary text-uppercase tracking-wider mb-3">Your Focus Board</h6>
+    
+    <% if(goals && goals.length > 0) { %>
+        <div class="d-flex flex-column gap-3">
+            <% goals.forEach(goal => { %>
+                <!-- LINTER FIX: Swapped inline style EJS for native class toggling -->
+                <div class="p-3 border d-flex align-items-center justify-content-between shadow-sm-hover <%= goal.isCompleted ? 'bg-body-tertiary opacity-75' : 'bg-body' %>" style="border-radius: 12px; transition: all 0.2s;">
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- INSTANT STRIKE-OFF TOGGLE FORM -->
+                        <form action="/goals/<%= goal._id %>/toggle" method="POST" class="m-0 p-0">
+                            <button type="submit" class="bg-transparent border-0 p-0 m-0 text-primary">
+                                <% if(goal.isCompleted) { %>
+                                    <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+                                <% } else { %>
+                                    <i class="bi bi-circle fs-3 text-secondary"></i>
+                                <% } %>
+                            </button>
+                        </form>
+
+                        <!-- LINTER FIX: Using Bootstrap text-decoration class instead of style injection -->
+                        <div class="<%= goal.isCompleted ? 'text-decoration-line-through text-muted' : '' %>">
+                            <h5 class="mb-0 fw-bold" style="color: var(--finmate-text);"><%= goal.title %></h5>
+                            <span class="text-secondary fw-medium small">Target: ₹<%= goal.targetAmount %></span>
+                        </div>
+                    </div>
+
+                    <!-- PURGE BUTTON -->
+                    <form action="/goals/<%= goal._id %>/delete" method="POST" class="m-0 p-0" onsubmit="return confirm('Remove this goal completely?');">
+                        <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Delete Goal">
+                            <i class="bi bi-trash3-fill fs-5 opacity-75 shadow-hover-none"></i>
+                        </button>
+                    </form>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5 border border-dashed bg-body" style="border-radius: 16px;">
+            <i class="bi bi-journal-x display-4 d-block mb-3 opacity-25" style="color: var(--finmate-purple-heading);"></i>
+            <h5 class="fw-bold mb-1" style="color: var(--finmate-text);">No targets set yet.</h5>
+            <p class="text-secondary small m-0">Add a financial goal above to start tracking your motivation.</p>
+        </div>
+    <% } %>
+
+</div>

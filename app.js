@@ -90,29 +90,38 @@ app.get('/', isLoggedIn, async (req, res) => {
         let totalSpent = 0;
         
         expenses.forEach(exp => {
-            if (exp.splitType === 'None') {
+            if (exp.splitType !== 'Settlement') {
                 const cat = categoryTotals.hasOwnProperty(exp.category) ? exp.category : 'Other';
                 categoryTotals[cat] += exp.amount;
                 totalSpent += exp.amount;
             }
         });
 
-        const personalExpenseCount = expenses.filter(e => e.splitType === 'None').length;
-        const avgExpense = personalExpenseCount > 0 ? Math.round(totalSpent / personalExpenseCount) : 0;
+        const analyticalExpenseCount = expenses.filter(e => e.splitType !== 'Settlement').length;
+        const avgExpense = analyticalExpenseCount > 0 ? Math.round(totalSpent / analyticalExpenseCount) : 0;
+
+        let totalMonthlySubCost = 0;
+        let activeGhostsCount = 0;
+        if (populatedUser.subscriptions) {
+            populatedUser.subscriptions.forEach(sub => {
+                totalMonthlySubCost += (sub.billingCycle === 'Yearly' ? sub.cost / 12 : sub.cost);
+                if (sub.isGhost) activeGhostsCount++;
+            });
+        }
 
         return res.render('dashboard/index', { 
             expenses, 
             populatedUser, 
             pendingDebts,
-            analytics: { categoryTotals, totalSpent, avgExpense }
+            analytics: { categoryTotals, totalSpent, avgExpense },
+            subStats: { totalMonthlySubCost: Math.round(totalMonthlySubCost), activeGhostsCount }
         });
     } catch (err) {
         req.flash('error', `Unable to retrieve ledger logs: ${err.message}`);
-        return res.render('dashboard/index', { expenses: [], populatedUser: req.user, pendingDebts: [], analytics: null });
+        return res.render('dashboard/index', { expenses: [], populatedUser: req.user, pendingDebts: [], analytics: null, subStats: null });
     }
 });
 
-// Advanced Log Expense Flow supporting Equi-Split and Custom Split
 app.post('/expenses', isLoggedIn, async (req, res) => {
     try {
         const { description, amount, category, splitType, selectedFriends, customAmounts } = req.body;
@@ -147,14 +156,11 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
                 }
             } else if (splitType === 'Custom Split' && customAmounts) {
                 let verifiedSum = 0;
-                
                 for (let friendId of friendsList) {
                     const friendShare = Number(customAmounts[friendId]) || 0;
                     verifiedSum += friendShare;
-                    
                     if (friendShare > 0) {
                         participantsArray.push({ user: friendId, owedAmount: friendShare, isSettled: false });
-                        
                         const debtAlert = new Notification({
                             recipient: friendId,
                             sender: req.user._id,
@@ -165,8 +171,6 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
                         await debtAlert.save();
                     }
                 }
-
-                // Verify the total custom split amounts do not exceed the main bill
                 if (verifiedSum > numericAmount) {
                     req.flash('error', `Custom split sums (₹${verifiedSum}) cannot exceed total bill (₹${numericAmount}).`);
                     return res.redirect('/');
@@ -174,19 +178,10 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
             }
         }
 
-        const newExpense = new Expense({
-            description,
-            amount: numericAmount,
-            category,
-            paidBy: req.user._id,
-            splitType: selectedFriends ? splitType : 'None',
-            participants: participantsArray
-        });
+        const newExpense = new Expense({ description, amount: numericAmount, category, paidBy: req.user._id, splitType: selectedFriends ? splitType : 'None', participants: participantsArray });
         await newExpense.save();
-
         user.allowance = Math.max(user.allowance - numericAmount, 0);
         await user.save();
-
         req.flash('success', selectedFriends ? 'Group split bills dispatched successfully.' : 'Personal outlay logged.');
         res.redirect('/');
     } catch (err) {
@@ -195,112 +190,171 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
     }
 });
 
-// ACCEPT DEBT HANDSHAKE WITH IMMEDIATE BALANCING RESTORATION
 app.post('/debts/:notifyId/accept', isLoggedIn, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.notifyId);
         if (!notification || notification.recipient.toString() !== req.user._id.toString()) {
-            req.flash('error', 'Debt record not found.');
-            return res.redirect('/');
+            req.flash('error', 'Debt record not found.'); return res.redirect('/');
         }
-
         const parsedMatch = notification.message.match(/₹([\d.]+)/);
         const debtValue = parsedMatch ? Number(parsedMatch[1]) : 0;
-
         const user = await User.findById(req.user._id);
         if (user.allowance < debtValue) {
-            req.flash('error', `Cannot accept request. You need ₹${debtValue} but your balance is only ₹${user.allowance}. Top up funds first.`);
-            return res.redirect('/');
+            req.flash('error', `Cannot accept request. You need ₹${debtValue}. Top up funds first.`); return res.redirect('/');
         }
-
-        user.allowance -= debtValue;
-        await user.save();
-
-        await User.findByIdAndUpdate(notification.sender, { $inc: { allowance: debtValue } });
-
-        notification.isRead = true;
-        await notification.save();
-
-        const settlementAlert = new Notification({
-            recipient: notification.sender,
-            sender: req.user._id,
-            type: 'PAYMENT_MARKED',
-            message: `${req.user.username} approved your split request and paid ₹${debtValue} instantly.`
-        });
+        user.allowance -= debtValue; await user.save();
+        const senderUser = await User.findById(notification.sender);
+        const paymentLog = new Expense({ description: `Settled split share to ${senderUser ? senderUser.username : 'friend'}`, amount: debtValue, category: 'Other', paidBy: req.user._id, splitType: 'None' });
+        await paymentLog.save();
+        if (senderUser) {
+            senderUser.allowance += debtValue; await senderUser.save();
+            const creditLog = new Expense({ description: `Received settlement from ${req.user.username}`, amount: debtValue, category: 'Other', paidBy: notification.sender, splitType: 'Settlement' });
+            await creditLog.save();
+        }
+        notification.isRead = true; await notification.save();
+        const settlementAlert = new Notification({ recipient: notification.sender, sender: req.user._id, type: 'PAYMENT_MARKED', message: `${req.user.username} approved your split request and paid ₹${debtValue} instantly.` });
         await settlementAlert.save();
-
         req.flash('success', `Request accepted. ₹${debtValue} transferred safely.`);
         res.redirect('/');
-    } catch (err) {
-        req.flash('error', `Processing settlement workflow failed: ${err.message}`);
-        res.redirect('/');
-    }
+    } catch (err) { req.flash('error', 'Processing settlement failed.'); res.redirect('/'); }
 });
 
-// DECLINE DEBT REQUEST HANDLER
 app.post('/debts/:notifyId/decline', isLoggedIn, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.notifyId);
         if (notification && notification.recipient.toString() === req.user._id.toString()) {
-            notification.isRead = true;
-            await notification.save();
-            
-            const declineAlert = new Notification({
-                recipient: notification.sender,
-                sender: req.user._id,
-                type: 'DEBT_OWED',
-                message: `${req.user.username} declined your bill splitting request.`
-            });
+            notification.isRead = true; await notification.save();
+            const declineAlert = new Notification({ recipient: notification.sender, sender: req.user._id, type: 'DEBT_OWED', message: `${req.user.username} declined your bill splitting request.` });
             await declineAlert.save();
         }
-        req.flash('success', 'Split request declined.');
-        res.redirect('/');
-    } catch (e) {
-        res.redirect('/');
-    }
+        req.flash('success', 'Split request declined.'); res.redirect('/');
+    } catch (e) { res.redirect('/'); }
 });
 
-// DELETE EXPENSE WITH RESTORATION FLOW
 app.post('/expenses/:id/delete', isLoggedIn, async (req, res) => {
     try {
         const expense = await Expense.findById(req.params.id);
-        if (!expense || expense.paidBy.toString() !== req.user._id.toString()) {
-            req.flash('error', 'Unauthorized request.');
-            return res.redirect('/');
-        }
+        if (!expense || expense.paidBy.toString() !== req.user._id.toString()) return res.redirect('/');
         const user = await User.findById(req.user._id);
-        user.allowance += expense.amount;
+        if (expense.splitType === 'Settlement') user.allowance = Math.max(0, user.allowance - expense.amount);
+        else user.allowance += expense.amount;
         await user.save();
         await Expense.findByIdAndDelete(req.params.id);
-        req.flash('success', 'Outlay removed. Funds restored.');
-        res.redirect('/');
-    } catch (err) {
-        req.flash('error', `Failed to remove transaction item: ${err.message}`);
-        res.redirect('/');
-    }
+        req.flash('success', 'Ledger record removed and balance adjusted.'); res.redirect('/');
+    } catch (err) { res.redirect('/'); }
 });
 
 app.post('/add-funds', isLoggedIn, async (req, res) => {
     try {
         const { fundingAmount } = req.body;
-        if (!fundingAmount || Number(fundingAmount) <= 0) {
-            req.flash('error', 'Invalid amount.');
-            return res.redirect('/');
-        }
         const user = await User.findById(req.user._id);
         user.allowance += Number(fundingAmount);
         await user.save();
-        req.flash('success', 'Allowance updated!');
-        res.redirect('/');
+        req.flash('success', 'Allowance updated!'); res.redirect('/');
     } catch (err) { res.redirect('/'); }
 });
 
 app.post('/reset-funds', isLoggedIn, async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.user._id, { allowance: 0 });
-        req.flash('success', 'Campus balance reset to zero.');
-        res.redirect('/');
+        req.flash('success', 'Campus balance reset to zero.'); res.redirect('/');
     } catch (err) { res.redirect('/'); }
+});
+
+app.get('/goals', isLoggedIn, async (req, res) => {
+    try { const user = await User.findById(req.user._id); res.render('goals/index', { goals: user.goals }); } catch (err) { res.redirect('/'); }
+});
+
+app.post('/goals', isLoggedIn, async (req, res) => {
+    try {
+        const { title, targetAmount } = req.body;
+        const user = await User.findById(req.user._id);
+        user.goals.push({ title, targetAmount: Number(targetAmount) });
+        await user.save();
+        res.redirect('/goals');
+    } catch (err) { res.redirect('/goals'); }
+});
+
+app.post('/goals/:goalId/toggle', isLoggedIn, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const goal = user.goals.id(req.params.goalId);
+        if (goal) { goal.isCompleted = !goal.isCompleted; await user.save(); }
+        res.redirect('/goals');
+    } catch (err) { res.redirect('/goals'); }
+});
+
+app.post('/goals/:goalId/delete', isLoggedIn, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        user.goals.pull(req.params.goalId); await user.save();
+        res.redirect('/goals');
+    } catch (err) { res.redirect('/goals'); }
+});
+
+// --- SAFE OVERRIDE GHOST TRACKER PATHWAYS ---
+app.get('/subscriptions', isLoggedIn, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        // Explicitly ensuring relative string views map securely
+        res.render('subscriptions/index', { subscriptions: user.subscriptions });
+    } catch (err) {
+        req.flash('error', `Could not load Ghost Tracker: ${err.message}`);
+        res.redirect('/');
+    }
+});
+
+app.post('/subscriptions', isLoggedIn, async (req, res) => {
+    try {
+        const { name, cost, billingCycle, lastUsed, cancelUrl } = req.body;
+        const isGhost = (lastUsed === '1+ Month Ago');
+        
+        const user = await User.findById(req.user._id);
+        user.subscriptions.push({ 
+            name, 
+            cost: Number(cost), 
+            billingCycle, 
+            lastUsed, 
+            cancelUrl: cancelUrl || '#',
+            isGhost 
+        });
+        await user.save();
+        req.flash('success', 'Subscription logged. Ghost scanning active.');
+        res.redirect('/subscriptions');
+    } catch (err) {
+        req.flash('error', `Failed to save subscription: ${err.message}`);
+        res.redirect('/subscriptions');
+    }
+});
+
+app.post('/subscriptions/:subId/status', isLoggedIn, async (req, res) => {
+    try {
+        const { lastUsed } = req.body;
+        const user = await User.findById(req.user._id);
+        const sub = user.subscriptions.id(req.params.subId);
+        
+        if (sub) {
+            sub.lastUsed = lastUsed;
+            sub.isGhost = (lastUsed === '1+ Month Ago');
+            await user.save();
+            req.flash('success', 'Activity status updated.');
+        }
+        res.redirect('/subscriptions');
+    } catch (err) {
+        res.redirect('/subscriptions');
+    }
+});
+
+app.post('/subscriptions/:subId/delete', isLoggedIn, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        user.subscriptions.pull(req.params.subId);
+        await user.save();
+        req.flash('success', 'Subscription removed from tracking.');
+        res.redirect('/subscriptions');
+    } catch (err) {
+        res.redirect('/subscriptions');
+    }
 });
 
 app.all('*', (req, res) => { res.status(404).send('Page Not Found'); });

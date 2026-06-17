@@ -1,0 +1,119 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container py-5 animate-fade-in" style="max-width: 900px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-finmate-outline btn-sm px-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h3 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">
+            <i class="bi bi-eye-slash-fill"></i> Ghost Tracker
+        </h3>
+    </div>
+
+    <!-- NEW SUBSCRIPTION LOG PANEL -->
+    <div class="card border shadow-sm mb-5" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
+        <div class="card-body p-4">
+            <h6 class="fw-bold text-secondary text-uppercase tracking-wider mb-3">Log a Recurring Plan</h6>
+            <form action="/subscriptions" method="POST">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-medium">Service Name</label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g., Netflix" required style="border-radius: 8px;">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-medium">Cost (₹)</label>
+                        <input type="number" class="form-control" name="cost" placeholder="199" min="1" required style="border-radius: 8px;">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-medium">Cycle</label>
+                        <select class="form-select" name="billingCycle" style="border-radius: 8px;">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-medium">Cancellation URL (Optional)</label>
+                        <input type="text" class="form-control" name="cancelUrl" placeholder="netflix.com/cancel" style="border-radius: 8px;">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-finmate-solid w-100 fw-bold" style="border-radius: 8px; height: 38px;">Track</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ACTIVE MONITORING LIST -->
+    <h6 class="fw-bold text-secondary text-uppercase tracking-wider mb-3">Monitored Plans & Bleed Projections</h6>
+    
+    <% if(subscriptions && subscriptions.length > 0) { %>
+        <div class="d-flex flex-column gap-3">
+            <% subscriptions.forEach(sub => { %>
+                <% 
+                    const yearlyBleed = sub.billingCycle === 'Monthly' ? sub.cost * 12 : sub.cost; 
+                %>
+
+                <div class="p-3 border d-flex flex-column flex-md-row justify-content-between align-items-md-center shadow-sm-hover bg-body" style="border-radius: 12px; transition: all 0.2s;">
+                    
+                    <div class="d-flex align-items-center gap-3 mb-3 mb-md-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary" style="width: 45px; height: 45px; flex-shrink: 0;">
+                            <i class="bi bi-play-circle-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="mb-0 fw-bold" style="color: var(--finmate-text);"><%= sub.name %></h5>
+                                <% if (sub.isGhost) { %>
+                                    <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.65rem;">GHOST DETECTED</span>
+                                <% } %>
+                            </div>
+                            <span class="text-secondary fw-medium small">₹<%= sub.cost %> / <%= sub.billingCycle %></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 gap-md-4">
+                        
+                        <!-- BLEED RATE HUD -->
+                        <div class="text-start text-md-end border-end pe-md-4 border-end-0 border-md-end">
+                            <span class="small text-secondary fw-bold text-uppercase d-block" style="font-size: 0.65rem;">Yearly Bleed</span>
+                            <span class="fw-bold text-dark">₹<%= yearlyBleed %></span>
+                        </div>
+
+                        <!-- ACTIVITY UPDATER FORM -->
+                        <form action="/subscriptions/<%= sub._id %>/status" method="POST" class="m-0 d-flex align-items-center gap-2">
+                            <select class="form-select form-select-sm" name="lastUsed" onchange="this.form.submit()" style="border-radius: 6px; width: 140px; cursor: pointer;">
+                                <option value="Today" <%= sub.lastUsed === 'Today' ? 'selected' : '' %>>Used Today</option>
+                                <option value="Last Week" <%= sub.lastUsed === 'Last Week' ? 'selected' : '' %>>Used Last Week</option>
+                                <option value="1+ Month Ago" <%= sub.lastUsed === '1+ Month Ago' ? 'selected' : '' %>>1+ Month Ago</option>
+                            </select>
+                        </form>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- KILL SWITCH BUTTON: Red gradient dropped for clean purple themes tokens -->
+                            <% if(sub.cancelUrl && sub.cancelUrl !== '#') { %>
+                                <a href="<%= sub.cancelUrl.startsWith('http') ? sub.cancelUrl : 'https://' + sub.cancelUrl %>" target="_blank" class="btn btn-sm btn-finmate-solid fw-bold px-3" style="border-radius: 6px; height: 31px;">
+                                    Kill Switch
+                                </a>
+                            <% } %>
+
+                            <!-- PURGE TRACKER -->
+                            <form action="/subscriptions/<%= sub._id %>/delete" method="POST" class="m-0 p-0" onsubmit="return confirm('Stop monitoring this plan?');">
+                                <button type="submit" class="btn btn-link text-secondary p-0 border-0 ms-2" title="Delete">
+                                    <i class="bi bi-trash3-fill fs-5 opacity-50 shadow-hover-none"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5 border border-dashed bg-body" style="border-radius: 16px;">
+            <i class="bi bi-eye-slash display-4 d-block mb-3 opacity-25" style="color: var(--finmate-purple-heading);"></i>
+            <h5 class="fw-bold mb-1" style="color: var(--finmate-text);">No subscriptions logged.</h5>
+            <p class="text-secondary small m-0">Start tracking plans above to monitor for background money leaks.</p>
+        </div>
+    <% } %>
+
+</div>

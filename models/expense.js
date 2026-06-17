@@ -4,8 +4,7 @@ const Schema = mongoose.Schema;
 const ExpenseSchema = new Schema({
     description: {
         type: String,
-        required: true,
-        trim: true
+        required: true
     },
     amount: {
         type: Number,
@@ -14,8 +13,8 @@ const ExpenseSchema = new Schema({
     },
     category: {
         type: String,
-        enum: ['Canteen', 'Academics', 'Travel', 'Junk Food', 'Other'],
-        required: true
+        required: true,
+        enum: ['Canteen', 'Academics', 'Travel', 'Junk Food', 'Other']
     },
     paidBy: {
         type: Schema.Types.ObjectId,
@@ -24,7 +23,9 @@ const ExpenseSchema = new Schema({
     },
     splitType: {
         type: String,
-        enum: ['None', 'Equi-Split', 'Custom'],
+        required: true,
+        // Added 'Settlement' to explicitly track incoming peer payments
+        enum: ['None', 'Equi-Split', 'Custom Split', 'Settlement'],
         default: 'None'
     },
     participants: [{
@@ -32,7 +33,14 @@ const ExpenseSchema = new Schema({
             type: Schema.Types.ObjectId,
             ref: 'User'
         },
-        share: Number
+        owedAmount: {
+            type: Number,
+            default: 0
+        },
+        isSettled: {
+            type: Boolean,
+            default: false
+        }
     }]
 }, { timestamps: true });
 
