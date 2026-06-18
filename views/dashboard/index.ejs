@@ -183,20 +183,22 @@
                             <div class="mt-3">
                                 <h6 class="fw-bold small text-secondary text-uppercase tracking-wider mb-2">My Circle</h6>
                                 <% if(typeof populatedUser !== 'undefined' && populatedUser.friends && populatedUser.friends.length > 0) { %>
+                                    
+                                    <!-- BULLETPROOF HIDDEN FORM - Fixes browser caching & DOM nesting glitches -->
+                                    <form id="removeFriendForm" action="/remove-friend" method="POST" style="display: none;">
+                                        <input type="hidden" name="friendId" id="removeFriendIdInput">
+                                    </form>
+
                                     <div class="d-flex flex-wrap gap-2">
                                         <% populatedUser.friends.forEach(friend => { %>
                                             <% if(friend && friend.username) { %>
-                                                <!-- FIX: Replaced .badge with pure Flexbox d-inline-flex to prevent DOM shattering -->
                                                 <div class="d-inline-flex align-items-center gap-2 px-3 py-2 border rounded-pill shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
                                                     <i class="bi bi-person-circle text-primary"></i> 
                                                     <span class="small fw-medium"><%= friend.username %></span>
                                                     
-                                                    <form action="/remove-friend" method="POST" class="m-0 p-0 ms-1 d-flex align-items-center" onsubmit="return confirm('Remove <%= friend.username %> from your circle?');">
-                                                        <input type="hidden" name="friendId" value="<%= friend._id %>">
-                                                        <button type="submit" class="btn btn-link p-0 m-0 border-0 text-danger d-flex align-items-center shadow-none text-decoration-none" style="cursor: pointer; line-height: 1;">
-                                                            <i class="bi bi-x-circle-fill text-danger opacity-75 fs-6"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" onclick="if(confirm('Remove <%= friend.username %> from your circle?')) { document.getElementById('removeFriendIdInput').value = '<%= friend._id %>'; document.getElementById('removeFriendForm').submit(); }" class="btn btn-link p-0 m-0 border-0 text-danger d-flex align-items-center shadow-none text-decoration-none" style="cursor: pointer; line-height: 1;">
+                                                        <i class="bi bi-x-circle-fill text-danger opacity-75 fs-6"></i>
+                                                    </button>
                                                 </div>
                                             <% } %>
                                         <% }) %>
