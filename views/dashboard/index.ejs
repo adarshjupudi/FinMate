@@ -186,7 +186,8 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         <% populatedUser.friends.forEach(friend => { %>
                                             <% if(friend && friend.username) { %>
-                                                <span class="badge border px-3 py-2 rounded-pill fw-medium d-flex align-items-center gap-2 shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
+                                                <!-- FIX: Changed outer element from span to div to prevent HTML parser breaking on nested forms -->
+                                                <div class="badge border px-3 py-2 rounded-pill fw-medium d-flex align-items-center gap-2 shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
                                                     <i class="bi bi-person-circle text-primary"></i> 
                                                     <span><%= friend.username %></span>
                                                     
@@ -196,7 +197,7 @@
                                                             <i class="bi bi-x-circle-fill text-danger opacity-75"></i>
                                                         </button>
                                                     </form>
-                                                </span>
+                                                </div>
                                             <% } %>
                                         <% }) %>
                                     </div>
@@ -564,7 +565,7 @@
 
                     document.querySelectorAll('.add-friend-btn').forEach(btn => {
                         btn.addEventListener('click', async (e) => {
-                            const targetBtn = e.currentTarget; // FIX: Store reference to button synchronously
+                            const targetBtn = e.currentTarget; 
                             const friendId = targetBtn.getAttribute('data-id');
                             const originalHtml = targetBtn.innerHTML;
                             targetBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
