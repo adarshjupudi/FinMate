@@ -195,7 +195,7 @@
                                                         <button type="submit" class="bg-transparent border-0 p-0 m-0 d-inline-flex align-items-center text-danger" style="cursor: pointer; font-size: 0.9rem;">
                                                             <i class="bi bi-x-circle-fill text-danger opacity-75"></i>
                                                         </button>
-                                                    </form>
+                                                    </span >
                                                 </span>
                                             <% } %>
                                         <% }) %>
@@ -210,44 +210,37 @@
                     </div>
                 </div>
 
+                <!-- MODULE 3: TRANSIT RADAR -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">3. Ghost Tracker</h5>
-                                    <i class="bi bi-eye-slash-fill fs-4 text-primary"></i>
+                                    <h5 class="fw-bold m-0" style="color: var(--finmate-purple-heading);">3. Transit Radar</h5>
+                                    <i class="bi bi-car-front-fill fs-4 text-primary"></i>
                                 </div>
-                                <small class="text-secondary d-block">Unutilized streaming plan monitors</small>
+                                <small class="text-secondary d-block">Split Auto/Cab fares</small>
                             </div>
                             
-                            <% if (typeof subStats !== 'undefined' && subStats !== null && populatedUser.subscriptions && populatedUser.subscriptions.length > 0) { %>
+                            <% if (typeof activeTransits !== 'undefined' && activeTransits.length > 0) { %>
                                 <div class="p-3 border rounded-3 mb-3" style="background-color: var(--finmate-nav-bg); border-color: var(--finmate-border) !important;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="small fw-medium text-secondary">Total Recurring:</span>
-                                        <span class="fw-bold" style="color: var(--finmate-text);">Stream ₹<%= subStats.totalMonthlySubCost %> /mo</span>
-                                    </div>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span class="small fw-medium text-secondary">Active Ghosts:</span>
-                                        <% if (subStats.activeGhostsCount > 0) { %>
-                                            <span class="badge bg-danger text-white rounded-pill px-2"><%= subStats.activeGhostsCount %> Detected</span>
-                                        <% } else { %>
-                                            <span class="badge bg-success-subtle text-success rounded-pill px-2">Clean</span>
-                                        <% } %>
+                                        <span class="small fw-medium text-secondary">Active Rides:</span>
+                                        <span class="badge bg-finmate-solid rounded-pill px-3 py-1 text-xs" style="background-color: var(--finmate-purple-heading) !important; color:#fff !important;"><%= activeTransits.length %> Open</span>
                                     </div>
                                 </div>
-                                <a href="/subscriptions" class="btn btn-finmate-outline btn-sm w-100 fw-bold">Manage Plans</a>
+                                <a href="/transit" class="btn btn-finmate-outline btn-sm w-100 fw-bold rounded-pill">Find a Ride</a>
                             <% } else { %>
                                 <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
-                                    <span class="small text-secondary d-block mb-2">No subscriptions currently tracked.</span>
-                                    <a href="/subscriptions" class="btn btn-finmate-solid btn-sm px-4">Start Tracking</a>
+                                    <p class="small text-secondary mb-2">No rides scheduled.</p>
+                                    <a href="/transit" class="btn btn-finmate-solid btn-sm px-4 rounded-pill">Host a Ride</a>
                                 </div>
                             <% } %>
-
                         </div>
                     </div>
                 </div>
 
+                <!-- MODULE 4: FOOD POOL CARTS -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -266,22 +259,23 @@
                                         <span class="badge bg-finmate-solid rounded-pill px-3 py-1 text-xs" style="background-color: var(--finmate-purple-heading) !important; color:#fff !important;"><%= activeLobbies.length %> Lobbies Open</span>
                                     </div>
                                 </div>
-                                <a href="/lobbies" class="btn btn-finmate-outline btn-sm w-100 fw-bold">Enter Lobbies</a>
+                                <a href="/lobbies" class="btn btn-finmate-outline btn-sm w-100 fw-bold rounded-pill">Enter Lobbies</a>
                             <% } else { %>
                                 <div class="p-3 border border-dashed rounded-3 bg-body text-center my-2">
                                     <p class="small text-secondary mb-2">No delivery pool lobbies nearby.</p>
-                                    <a href="/lobbies" class="btn btn-finmate-solid btn-sm px-4">Create Lobby</a>
+                                    <a href="/lobbies" class="btn btn-finmate-solid btn-sm px-4 rounded-pill">Create Lobby</a>
                                 </div>
                             <% } %>
-
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </div>
 
+<!-- MODALS -->
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -374,7 +368,7 @@
                                     <div class="mt-2 custom-input-wrapper-box" id="wrapper_<%= friend._id %>" style="display: none;">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control custom-share-input-field" name="customAmounts[<%= friend._id %>]" placeholder="Owed volume share" min="0" data-id="<%= friend._id %>">
+                                            <input type="number" class="form-control custom-share-input-field" name="customAmounts[<%= friend._id %>]" placeholder="Owed share" min="0" data-id="<%= friend._id %>">
                                         </div>
                                     </div>
                                 </div>
@@ -589,7 +583,6 @@
                                 }
 
                                 const reqData = await reqRes.json();
-
                                 if (reqData.success) {
                                     e.currentTarget.classList.replace('btn-finmate-solid', 'btn-success');
                                     e.currentTarget.innerHTML = '<i class="bi bi-check2"></i> Sent';

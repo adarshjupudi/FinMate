@@ -1,5 +1,4 @@
-if (process.env.NODE_ENV !== "production") 
-{
+if (process.env.NODE_ENV !== "production") {
     require('dotenv').config();
 }
 
@@ -12,14 +11,15 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+
 const User = require('./models/user');
 const Expense = require('./models/expense');
 const Notification = require('./models/notification');
-const Lobby = require('./models/lobby'); // INJECTED LOBBY MODEL
+const Lobby = require('./models/lobby');
+const Transit = require('./models/transit'); 
 const userRoutes = require('./routes/users');
 const { isLoggedIn } = require('./middleware/index');
 
-// --- DATABASE CONNECTION ---
 const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/finmate';
 mongoose.connect(dbUrl, {
     useNewUrlParser: true,
@@ -32,7 +32,6 @@ const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", () => { console.log("Database connected successfully"); });
 
-// --- APP CONFIGURATION ---
 app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -44,29 +43,23 @@ const sessionConfig = {
     secret: 'thisshouldbeabettersecret!',
     resave: false,
     saveUninitialized: true,
-    cookie: {
-        httpOnly: true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 * 7
-    }
+    cookie: { httpOnly: true, expires: Date.now() + 1000 * 60 * 60 * 24 * 7, maxAge: 1000 * 60 * 60 * 24 * 7 }
 };
 app.use(session(sessionConfig));
 app.use(flash());
 
-// --- PASSPORT AUTHENTICATION ---
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// --- GLOBAL VARIABLES MIDDLEWARE ---
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     if (req.user) {
-        try {
+        try { 
             res.locals.unreadNotifications = await Notification.find({ recipient: req.user._id, isRead: false }).sort({ createdAt: -1 });
         } catch (err) { res.locals.unreadNotifications = []; }
     } else { res.locals.unreadNotifications = []; }
@@ -75,58 +68,55 @@ app.use(async (req, res, next) => {
 
 app.use('/', userRoutes);
 
-// Core Dashboard Feed Aggregator
+// --- CORE DASHBOARD AGGREGATOR ---
 app.get('/', isLoggedIn, async (req, res) => {
     try {
         const populatedUser = await User.findById(req.user._id).populate('friends', 'username email');
         const expenses = await Expense.find({ paidBy: req.user._id }).sort({ createdAt: -1 });
         
-        const pendingDebts = await Notification.find({ 
-            recipient: req.user._id, 
-            type: 'DEBT_OWED',
-            isRead: false 
-        }).populate('sender', 'username').sort({ createdAt: -1 });
+        const pendingDebts = await Notification.find({ recipient: req.user._id, type: 'DEBT_OWED', isRead: false }).populate('sender', 'username').sort({ createdAt: -1 });
+        const poolInvites = await Notification.find({ recipient: req.user._id, type: { $in: ['POOL_OPENED', 'TRANSIT_OPENED'] }, isRead: false }).populate('sender', 'username').sort({ createdAt: -1 });
 
-        // FETCH ACTIVE LOBBIES FOR MODULE 4
+        // DYNAMIC TTL EXPIRATION ENGINE
+        const allOpenLobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username');
+        for (let l of allOpenLobbies) {
+            if (Date.now() > new Date(l.createdAt).getTime() + (l.duration * 60000)) {
+                l.status = 'Closed'; await l.save();
+            }
+        }
+        
+        const allOpenTransits = await Transit.find({ status: 'Open' }).populate('host', 'username');
+        for (let t of allOpenTransits) {
+            if (Date.now() > new Date(t.createdAt).getTime() + (t.duration * 60000)) {
+                t.status = 'Closed'; await t.save();
+            }
+        }
+
         const activeLobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username');
+        const activeTransits = await Transit.find({ status: 'Open' }).populate('host', 'username');
 
         const categoryTotals = { Canteen: 0, Academics: 0, Travel: 0, 'Junk Food': 0, Other: 0 };
         let totalSpent = 0;
-        
         expenses.forEach(exp => {
             if (exp.splitType !== 'Settlement') {
                 const cat = categoryTotals.hasOwnProperty(exp.category) ? exp.category : 'Other';
-                categoryTotals[cat] += exp.amount;
-                totalSpent += exp.amount;
+                categoryTotals[cat] += exp.amount; totalSpent += exp.amount;
             }
         });
 
         const analyticalExpenseCount = expenses.filter(e => e.splitType !== 'Settlement').length;
         const avgExpense = analyticalExpenseCount > 0 ? Math.round(totalSpent / analyticalExpenseCount) : 0;
 
-        let totalMonthlySubCost = 0;
-        let activeGhostsCount = 0;
-        if (populatedUser.subscriptions) {
-            populatedUser.subscriptions.forEach(sub => {
-                totalMonthlySubCost += (sub.billingCycle === 'Yearly' ? sub.cost / 12 : sub.cost);
-                if (sub.isGhost) activeGhostsCount++;
-            });
-        }
-
         return res.render('dashboard/index', { 
-            expenses, 
-            populatedUser, 
-            pendingDebts,
-            activeLobbies,
-            analytics: { categoryTotals, totalSpent, avgExpense },
-            subStats: { totalMonthlySubCost: Math.round(totalMonthlySubCost), activeGhostsCount }
+            expenses, populatedUser, pendingDebts, poolInvites, activeLobbies, activeTransits, analytics: { categoryTotals, totalSpent, avgExpense }
         });
     } catch (err) {
-        req.flash('error', `Unable to retrieve ledger logs: ${err.message}`);
-        return res.render('dashboard/index', { expenses: [], populatedUser: req.user, pendingDebts: [], activeLobbies: [], analytics: null, subStats: null });
+        req.flash('error', `Dashboard Error: ${err.message}`);
+        return res.redirect('/login');
     }
 });
 
+// --- EXPENSE & SPLIT ROUTES ---
 app.post('/expenses', isLoggedIn, async (req, res) => {
     try {
         const { description, amount, category, splitType, selectedFriends, customAmounts } = req.body;
@@ -134,136 +124,91 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user.allowance < numericAmount) {
-            req.flash('error', `Insufficient funds! Available balance is only ₹${user.allowance}.`);
-            return res.redirect('/');
+            req.flash('error', `Insufficient funds! Available balance is only ₹${user.allowance}.`); return res.redirect('/');
         }
 
         let participantsArray = [];
-
         if (selectedFriends) {
             const friendsList = Array.isArray(selectedFriends) ? selectedFriends : [selectedFriends];
-            
             if (splitType === 'Equi-Split') {
-                const totalSharers = friendsList.length + 1;
-                const splitShare = Math.round((numericAmount / totalSharers) * 100) / 100;
-
+                const splitShare = Math.round((numericAmount / (friendsList.length + 1)) * 100) / 100;
                 for (let friendId of friendsList) {
                     participantsArray.push({ user: friendId, owedAmount: splitShare, isSettled: false });
-                    
-                    const debtAlert = new Notification({
-                        recipient: friendId,
-                        sender: req.user._id,
-                        type: 'DEBT_OWED',
-                        message: `${req.user.username} split a bill. You owe ₹${splitShare} for "${description}".`,
-                        linkUrl: '#'
-                    });
-                    await debtAlert.save();
+                    await new Notification({ recipient: friendId, sender: req.user._id, type: 'DEBT_OWED', message: `${req.user.username} split a bill. You owe ₹${splitShare} for "${description}".`, linkUrl: '#' }).save();
                 }
             } else if (splitType === 'Custom Split' && customAmounts) {
-                let verifiedSum = 0;
                 for (let friendId of friendsList) {
                     const friendShare = Number(customAmounts[friendId]) || 0;
-                    verifiedSum += friendShare;
                     if (friendShare > 0) {
                         participantsArray.push({ user: friendId, owedAmount: friendShare, isSettled: false });
-                        const debtAlert = new Notification({
-                            recipient: friendId,
-                            sender: req.user._id,
-                            type: 'DEBT_OWED',
-                            message: `${req.user.username} requested money. You owe ₹${friendShare} for "${description}".`,
-                            linkUrl: '#'
-                        });
-                        await debtAlert.save();
+                        await new Notification({ recipient: friendId, sender: req.user._id, type: 'DEBT_OWED', message: `${req.user.username} requested ₹${friendShare} for "${description}".`, linkUrl: '#' }).save();
                     }
-                }
-                if (verifiedSum > numericAmount) {
-                    req.flash('error', `Custom split sums (₹${verifiedSum}) cannot exceed total bill (₹${numericAmount}).`);
-                    return res.redirect('/');
                 }
             }
         }
-
-        const newExpense = new Expense({ description, amount: numericAmount, category, paidBy: req.user._id, splitType: selectedFriends ? splitType : 'None', participants: participantsArray });
-        await newExpense.save();
-        user.allowance = Math.max(user.allowance - numericAmount, 0);
-        await user.save();
-        req.flash('success', selectedFriends ? 'Group split bills dispatched successfully.' : 'Personal outlay logged.');
-        res.redirect('/');
-    } catch (err) {
-        req.flash('error', `Failed to store expense item: ${err.message}`);
-        res.redirect('/');
-    }
+        await new Expense({ description, amount: numericAmount, category, paidBy: req.user._id, splitType: selectedFriends ? splitType : 'None', participants: participantsArray }).save();
+        user.allowance = Math.max(user.allowance - numericAmount, 0); await user.save();
+        req.flash('success', 'Outlay logged.'); res.redirect('/');
+    } catch (err) { req.flash('error', err.message); res.redirect('/'); }
 });
 
 app.post('/debts/:notifyId/accept', isLoggedIn, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.notifyId);
-        if (!notification || notification.recipient.toString() !== req.user._id.toString()) {
-            req.flash('error', 'Debt record not found.'); return res.redirect('/');
-        }
         const parsedMatch = notification.message.match(/₹([\d.]+)/);
         const debtValue = parsedMatch ? Number(parsedMatch[1]) : 0;
         const user = await User.findById(req.user._id);
-        if (user.allowance < debtValue) {
-            req.flash('error', `Cannot accept request. You need ₹${debtValue}. Top up funds first.`); return res.redirect('/');
-        }
+        
+        if (user.allowance < debtValue) { req.flash('error', `Insufficient funds to accept.`); return res.redirect('/'); }
         user.allowance -= debtValue; await user.save();
         const senderUser = await User.findById(notification.sender);
-        const paymentLog = new Expense({ description: `Settled split share to ${senderUser ? senderUser.username : 'friend'}`, amount: debtValue, category: 'Other', paidBy: req.user._id, splitType: 'None' });
-        await paymentLog.save();
+        
+        await new Expense({ description: `Settled split share`, amount: debtValue, category: 'Other', paidBy: req.user._id, splitType: 'None' }).save();
         if (senderUser) {
             senderUser.allowance += debtValue; await senderUser.save();
-            const creditLog = new Expense({ description: `Received settlement from ${req.user.username}`, amount: debtValue, category: 'Other', paidBy: notification.sender, splitType: 'Settlement' });
-            await creditLog.save();
+            await new Expense({ description: `Received settlement from ${req.user.username}`, amount: debtValue, category: 'Other', paidBy: notification.sender, splitType: 'Settlement' }).save();
         }
         notification.isRead = true; await notification.save();
-        const settlementAlert = new Notification({ recipient: notification.sender, sender: req.user._id, type: 'PAYMENT_MARKED', message: `${req.user.username} approved your split request and paid ₹${debtValue} instantly.` });
-        await settlementAlert.save();
-        req.flash('success', `Request accepted. ₹${debtValue} transferred safely.`);
-        res.redirect('/');
-    } catch (err) { req.flash('error', 'Processing settlement failed.'); res.redirect('/'); }
+        await new Notification({ recipient: notification.sender, sender: req.user._id, type: 'PAYMENT_MARKED', message: `${req.user.username} paid ₹${debtValue} instantly.` }).save();
+        req.flash('success', `Request accepted. ₹${debtValue} transferred.`); res.redirect('/');
+    } catch (err) { res.redirect('/'); }
 });
 
 app.post('/debts/:notifyId/decline', isLoggedIn, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.notifyId);
-        if (notification && notification.recipient.toString() === req.user._id.toString()) {
-            notification.isRead = true; await notification.save();
-            const declineAlert = new Notification({ recipient: notification.sender, sender: req.user._id, type: 'DEBT_OWED', message: `${req.user.username} declined your bill splitting request.` });
-            await declineAlert.save();
-        }
-        req.flash('success', 'Split request declined.'); res.redirect('/');
+        notification.isRead = true; await notification.save();
+        res.redirect('/');
+    } catch (e) { res.redirect('/'); }
+});
+
+app.post('/notifications/:id/dismiss', isLoggedIn, async (req, res) => {
+    try {
+        await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+        res.redirect('/');
     } catch (e) { res.redirect('/'); }
 });
 
 app.post('/expenses/:id/delete', isLoggedIn, async (req, res) => {
     try {
         const expense = await Expense.findById(req.params.id);
-        if (!expense || expense.paidBy.toString() !== req.user._id.toString()) return res.redirect('/');
         const user = await User.findById(req.user._id);
         if (expense.splitType === 'Settlement') user.allowance = Math.max(0, user.allowance - expense.amount);
         else user.allowance += expense.amount;
-        await user.save();
-        await Expense.findByIdAndDelete(req.params.id);
-        req.flash('success', 'Ledger record removed and balance adjusted.'); res.redirect('/');
+        await user.save(); await Expense.findByIdAndDelete(req.params.id);
+        req.flash('success', 'Record removed.'); res.redirect('/');
     } catch (err) { res.redirect('/'); }
 });
 
 app.post('/add-funds', isLoggedIn, async (req, res) => {
     try {
-        const { fundingAmount } = req.body;
-        const user = await User.findById(req.user._id);
-        user.allowance += Number(fundingAmount);
-        await user.save();
+        const user = await User.findById(req.user._id); user.allowance += Number(req.body.fundingAmount); await user.save();
         req.flash('success', 'Allowance updated!'); res.redirect('/');
     } catch (err) { res.redirect('/'); }
 });
 
 app.post('/reset-funds', isLoggedIn, async (req, res) => {
-    try {
-        await User.findByIdAndUpdate(req.user._id, { allowance: 0 });
-        req.flash('success', 'Campus balance reset to zero.'); res.redirect('/');
-    } catch (err) { res.redirect('/'); }
+    try { await User.findByIdAndUpdate(req.user._id, { allowance: 0 }); req.flash('success', 'Reset to zero.'); res.redirect('/'); } catch (err) { res.redirect('/'); }
 });
 
 app.get('/goals', isLoggedIn, async (req, res) => {
@@ -297,98 +242,109 @@ app.post('/goals/:goalId/delete', isLoggedIn, async (req, res) => {
     } catch (err) { res.redirect('/goals'); }
 });
 
-app.get('/subscriptions', isLoggedIn, async (req, res) => {
-    try { const user = await User.findById(req.user._id); res.render('subscriptions/index', { subscriptions: user.subscriptions }); } catch (err) { res.redirect('/'); }
-});
-
-app.post('/subscriptions', isLoggedIn, async (req, res) => {
-    try {
-        const { name, cost, billingCycle, lastUsed, cancelUrl } = req.body;
-        const isGhost = (lastUsed === '1+ Month Ago');
-        const user = await User.findById(req.user._id);
-        user.subscriptions.push({ name, cost: Number(cost), billingCycle, lastUsed, cancelUrl: cancelUrl || '#', isGhost });
-        await user.save(); req.flash('success', 'Subscription logged. Ghost scanning active.'); res.redirect('/subscriptions');
-    } catch (err) { res.redirect('/subscriptions'); }
-});
-
-app.post('/subscriptions/:subId/status', isLoggedIn, async (req, res) => {
-    try {
-        const { lastUsed } = req.body; const user = await User.findById(req.user._id); const sub = user.subscriptions.id(req.params.subId);
-        if (sub) { sub.lastUsed = lastUsed; sub.isGhost = (lastUsed === '1+ Month Ago'); await user.save(); req.flash('success', 'Activity status updated.'); }
-        res.redirect('/subscriptions');
-    } catch (err) { res.redirect('/subscriptions'); }
-});
-
-app.post('/subscriptions/:subId/delete', isLoggedIn, async (req, res) => {
-    try { const user = await User.findById(req.user._id); user.subscriptions.pull(req.params.subId); await user.save(); res.redirect('/subscriptions'); } catch (err) { res.redirect('/subscriptions'); }
-});
-
-// --- NEW: POOL CART LOBBY ROUTE IMPLEMENTATIONS ---
+// --- MODULE 4: FOOD CART LOBBIES ---
 app.get('/lobbies', isLoggedIn, async (req, res) => {
     try {
         const lobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username').populate('members.user', 'username');
         res.render('lobbies/index', { lobbies });
-    } catch (err) {
-        req.flash('error', `Failed to load pool cart registries: ${err.message}`);
-        res.redirect('/');
-    }
+    } catch (err) { res.redirect('/'); }
 });
 
 app.post('/lobbies', isLoggedIn, async (req, res) => {
     try {
-        const { storeName, targetAmount, initialItemCost, initialItemDesc } = req.body;
-        const numericCost = Number(initialItemCost);
-
+        const { storeName, targetAmount, initialItemCost, initialItemDesc, duration } = req.body;
+        const hostUser = await User.findById(req.user._id).populate('friends');
+        
         const lobby = new Lobby({
-            host: req.user._id,
-            storeName,
-            targetAmount: Number(targetAmount),
-            currentAmount: numericCost,
-            members: [{ user: req.user._id, itemsDescription: initialItemDesc, itemCost: numericCost }]
+            host: req.user._id, storeName, targetAmount: Number(targetAmount), duration: Number(duration), currentAmount: Number(initialItemCost),
+            members: [{ user: req.user._id, itemsDescription: initialItemDesc, itemCost: Number(initialItemCost) }]
         });
         await lobby.save();
-        req.flash('success', 'Delivery pool cart lobby established.');
-        res.redirect('/lobbies');
-    } catch (err) {
-        req.flash('error', `Lobby creation rejected: ${err.message}`);
-        res.redirect('/lobbies');
-    }
+
+        for (let friend of hostUser.friends) {
+            await new Notification({
+                recipient: friend._id, sender: req.user._id, type: 'POOL_OPENED', linkUrl: '/lobbies',
+                message: `@${hostUser.username} is ordering from ${storeName}. Cart closes in ${duration} mins! Join now.`
+            }).save();
+        }
+        req.flash('success', 'Delivery pool created. Circle notified!'); res.redirect('/lobbies');
+    } catch (err) { res.redirect('/lobbies'); }
 });
 
 app.post('/lobbies/:id/join', isLoggedIn, async (req, res) => {
     try {
-        const { itemCost, itemsDescription } = req.body;
-        const numericCost = Number(itemCost);
-
         const lobby = await Lobby.findById(req.params.id);
-        lobby.members.push({ user: req.user._id, itemsDescription, itemCost: numericCost });
-        lobby.currentAmount += numericCost;
-        await lobby.save();
-
-        req.flash('success', 'Successfully merged items into the cart lobby!');
-        res.redirect('/lobbies');
-    } catch (err) {
-        req.flash('error', 'Failed to join delivery pool.');
-        res.redirect('/lobbies');
-    }
+        if (Date.now() > new Date(lobby.createdAt).getTime() + (lobby.duration * 60000)) {
+            lobby.status = 'Closed'; await lobby.save();
+            req.flash('error', 'This pool has expired.'); return res.redirect('/lobbies');
+        }
+        lobby.members.push({ user: req.user._id, itemsDescription: req.body.itemsDescription, itemCost: Number(req.body.itemCost) });
+        lobby.currentAmount += Number(req.body.itemCost); await lobby.save();
+        req.flash('success', 'Merged items into cart!'); res.redirect('/lobbies');
+    } catch (err) { res.redirect('/lobbies'); }
 });
 
 app.post('/lobbies/:id/close', isLoggedIn, async (req, res) => {
     try {
         const lobby = await Lobby.findById(req.params.id);
-        if (lobby.host.toString() !== req.user._id.toString()) {
-            req.flash('error', 'Unauthorized access.');
-            return res.redirect('/lobbies');
+        lobby.status = 'Closed'; await lobby.save();
+        req.flash('success', 'Lobby closed.'); res.redirect('/lobbies');
+    } catch (err) { res.redirect('/lobbies'); }
+});
+
+// --- MODULE 3: TRANSIT RADAR (CAB/AUTO) ---
+app.get('/transit', isLoggedIn, async (req, res) => {
+    try {
+        const transits = await Transit.find({ status: 'Open' }).populate('host', 'username').populate('members.user', 'username');
+        res.render('transit/index', { transits });
+    } catch (err) { res.redirect('/'); }
+});
+
+app.post('/transit', isLoggedIn, async (req, res) => {
+    try {
+        const { destination, vehicleType, duration } = req.body;
+        const targetCapacity = vehicleType === 'Auto' ? 3 : 4;
+        const hostUser = await User.findById(req.user._id).populate('friends');
+        
+        const transit = new Transit({
+            host: req.user._id, destination, vehicleType, targetCapacity, duration: Number(duration), currentCapacity: 1,
+            members: [{ user: req.user._id, seats: 1 }]
+        });
+        await transit.save();
+
+        for (let friend of hostUser.friends) {
+            await new Notification({
+                recipient: friend._id, sender: req.user._id, type: 'TRANSIT_OPENED', linkUrl: '/transit',
+                message: `@${hostUser.username} booked a ${vehicleType} to ${destination}. Departing in ${duration} mins!`
+            }).save();
         }
-        lobby.status = 'Closed';
-        await lobby.save();
-        req.flash('success', 'Lobby successfully closed.');
-        res.redirect('/lobbies');
-    } catch (err) {
-        res.redirect('/lobbies');
-    }
+        req.flash('success', 'Ride radar activated. Circle notified!'); res.redirect('/transit');
+    } catch (err) { res.redirect('/transit'); }
+});
+
+app.post('/transit/:id/join', isLoggedIn, async (req, res) => {
+    try {
+        const transit = await Transit.findById(req.params.id);
+        if (Date.now() > new Date(transit.createdAt).getTime() + (transit.duration * 60000)) {
+            transit.status = 'Closed'; await transit.save();
+            req.flash('error', 'Ride has departed.'); return res.redirect('/transit');
+        }
+        if (transit.currentCapacity >= transit.targetCapacity) {
+            req.flash('error', 'Ride is full!'); return res.redirect('/transit');
+        }
+        transit.members.push({ user: req.user._id, seats: 1 });
+        transit.currentCapacity += 1; await transit.save();
+        req.flash('success', 'Seat secured!'); res.redirect('/transit');
+    } catch (err) { res.redirect('/transit'); }
+});
+
+app.post('/transit/:id/close', isLoggedIn, async (req, res) => {
+    try {
+        const transit = await Transit.findById(req.params.id);
+        transit.status = 'Closed'; await transit.save();
+        req.flash('success', 'Ride departed.'); res.redirect('/transit');
+    } catch (err) { res.redirect('/transit'); }
 });
 
 app.all('*', (req, res) => { res.status(404).send('Page Not Found'); });
-const port = process.env.PORT || 3000;
-app.listen(port, () => { console.log(`Serving on port ${port}`); });
+app.listen(process.env.PORT || 3000, () => { console.log(`Serving on port 3000`); });

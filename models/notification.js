@@ -9,12 +9,13 @@ const NotificationSchema = new Schema({
     },
     sender: {
         type: Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        required: true
     },
     type: {
         type: String,
         required: true,
-        enum: ['DEBT_OWED', 'PAYMENT_MARKED', 'POOL_OPENED', 'FRIEND_REQUEST', 'REQUEST_ACCEPTED']
+        enum: ['FRIEND_REQUEST', 'REQUEST_ACCEPTED', 'DEBT_OWED', 'PAYMENT_MARKED', 'POOL_OPENED', 'TRANSIT_OPENED']
     },
     message: {
         type: String,
@@ -26,7 +27,7 @@ const NotificationSchema = new Schema({
     },
     linkUrl: {
         type: String,
-        default: '/'
+        default: '#'
     }
 }, { timestamps: true });
 

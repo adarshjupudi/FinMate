@@ -6,7 +6,7 @@ const LobbySchema = new Schema({
     storeName: { type: String, required: true },
     targetAmount: { type: Number, required: true, default: 399 },
     currentAmount: { type: Number, default: 0 },
-    duration: { type: Number, default: 10 }, // duration in minutes
+    duration: { type: Number, default: 10 }, // Mins until expiry
     status: { type: String, enum: ['Open', 'Ordered', 'Closed'], default: 'Open' },
     createdAt: { type: Date, default: Date.now },
     members: [{
