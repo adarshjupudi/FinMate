@@ -186,14 +186,15 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         <% populatedUser.friends.forEach(friend => { %>
                                             <% if(friend && friend.username) { %>
-                                                <div class="badge border px-3 py-2 rounded-pill fw-medium d-flex align-items-center gap-2 shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
+                                                <!-- FIX: Replaced .badge with pure Flexbox d-inline-flex to prevent DOM shattering -->
+                                                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 border rounded-pill shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
                                                     <i class="bi bi-person-circle text-primary"></i> 
-                                                    <span><%= friend.username %></span>
+                                                    <span class="small fw-medium"><%= friend.username %></span>
                                                     
-                                                    <form action="/remove-friend" method="POST" class="d-inline m-0 p-0 ms-1" onsubmit="return confirm('Remove <%= friend.username %> from your circle?');">
+                                                    <form action="/remove-friend" method="POST" class="m-0 p-0 ms-1 d-flex align-items-center" onsubmit="return confirm('Remove <%= friend.username %> from your circle?');">
                                                         <input type="hidden" name="friendId" value="<%= friend._id %>">
-                                                        <button type="submit" class="bg-transparent border-0 p-0 m-0 d-inline-flex align-items-center text-danger" style="cursor: pointer; font-size: 0.9rem;">
-                                                            <i class="bi bi-x-circle-fill text-danger opacity-75"></i>
+                                                        <button type="submit" class="btn btn-link p-0 m-0 border-0 text-danger d-flex align-items-center shadow-none text-decoration-none" style="cursor: pointer; line-height: 1;">
+                                                            <i class="bi bi-x-circle-fill text-danger opacity-75 fs-6"></i>
                                                         </button>
                                                     </form>
                                                 </div>
@@ -210,6 +211,7 @@
                     </div>
                 </div>
 
+                <!-- MODULE 3: TRANSIT RADAR -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -239,6 +241,7 @@
                     </div>
                 </div>
 
+                <!-- MODULE 4: FOOD POOL CARTS -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -273,6 +276,7 @@
     </div>
 </div>
 
+<!-- MODALS -->
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
