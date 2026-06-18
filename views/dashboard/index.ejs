@@ -190,7 +190,6 @@
                                                     <i class="bi bi-person-circle text-primary"></i> 
                                                     <span><%= friend.username %></span>
                                                     
-                                                    <!-- FIX: Properly closed the form tag here instead of </span > -->
                                                     <form action="/remove-friend" method="POST" class="d-inline m-0 p-0 ms-1" onsubmit="return confirm('Remove <%= friend.username %> from your circle?');">
                                                         <input type="hidden" name="friendId" value="<%= friend._id %>">
                                                         <button type="submit" class="bg-transparent border-0 p-0 m-0 d-inline-flex align-items-center text-danger" style="cursor: pointer; font-size: 0.9rem;">
@@ -565,10 +564,11 @@
 
                     document.querySelectorAll('.add-friend-btn').forEach(btn => {
                         btn.addEventListener('click', async (e) => {
-                            const friendId = e.currentTarget.getAttribute('data-id');
-                            const originalHtml = e.currentTarget.innerHTML;
-                            e.currentTarget.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-                            e.currentTarget.disabled = true;
+                            const targetBtn = e.currentTarget; // FIX: Store reference to button synchronously
+                            const friendId = targetBtn.getAttribute('data-id');
+                            const originalHtml = targetBtn.innerHTML;
+                            targetBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                            targetBtn.disabled = true;
 
                             try {
                                 const reqRes = await fetch('/send-friend-request', {
@@ -585,17 +585,17 @@
 
                                 const reqData = await reqRes.json();
                                 if (reqData.success) {
-                                    e.currentTarget.classList.replace('btn-finmate-solid', 'btn-success');
-                                    e.currentTarget.innerHTML = '<i class="bi bi-check2"></i> Sent';
+                                    targetBtn.classList.replace('btn-finmate-solid', 'btn-success');
+                                    targetBtn.innerHTML = '<i class="bi bi-check2"></i> Sent';
                                 } else {
                                     alert(reqData.error);
-                                    e.currentTarget.innerHTML = originalHtml;
-                                    e.currentTarget.disabled = false;
+                                    targetBtn.innerHTML = originalHtml;
+                                    targetBtn.disabled = false;
                                 }
                             } catch (err) {
                                 alert('Error: ' + err.message);
-                                e.currentTarget.innerHTML = originalHtml;
-                                e.currentTarget.disabled = false;
+                                targetBtn.innerHTML = originalHtml;
+                                targetBtn.disabled = false;
                             }
                         });
                     });
