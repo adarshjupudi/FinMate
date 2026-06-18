@@ -45,6 +45,7 @@ const sessionConfig = {
     saveUninitialized: true,
     cookie: { httpOnly: true, expires: Date.now() + 1000 * 60 * 60 * 24 * 7, maxAge: 1000 * 60 * 60 * 24 * 7 }
 };
+
 app.use(session(sessionConfig));
 app.use(flash());
 
@@ -68,8 +69,16 @@ app.use(async (req, res, next) => {
 
 app.use('/', userRoutes);
 
+// --- NEW HOME ROUTE ---
+app.get('/', (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.redirect('/dashboard');
+    }
+    res.render('home');
+});
+
 // --- CORE DASHBOARD AGGREGATOR ---
-app.get('/', isLoggedIn, async (req, res) => {
+app.get('/dashboard', isLoggedIn, async (req, res) => {
     try {
         const populatedUser = await User.findById(req.user._id).populate('friends', 'username email');
         const expenses = await Expense.find({ paidBy: req.user._id }).sort({ createdAt: -1 });
@@ -88,7 +97,8 @@ app.get('/', isLoggedIn, async (req, res) => {
         const allOpenTransits = await Transit.find({ status: 'Open' }).populate('host', 'username');
         for (let t of allOpenTransits) {
             if (Date.now() > new Date(t.createdAt).getTime() + (t.duration * 60000)) {
-                t.status = 'Closed'; await t.save();
+                t.status = 'Closed';
+                await t.save();
             }
         }
 
@@ -124,7 +134,7 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user.allowance < numericAmount) {
-            req.flash('error', `Insufficient funds! Available balance is only ₹${user.allowance}.`); return res.redirect('/');
+            req.flash('error', `Insufficient funds! Available balance is only ₹${user.allowance}.`); return res.redirect('/dashboard');
         }
 
         let participantsArray = [];
@@ -148,8 +158,8 @@ app.post('/expenses', isLoggedIn, async (req, res) => {
         }
         await new Expense({ description, amount: numericAmount, category, paidBy: req.user._id, splitType: selectedFriends ? splitType : 'None', participants: participantsArray }).save();
         user.allowance = Math.max(user.allowance - numericAmount, 0); await user.save();
-        req.flash('success', 'Outlay logged.'); res.redirect('/');
-    } catch (err) { req.flash('error', err.message); res.redirect('/'); }
+        req.flash('success', 'Outlay logged.'); res.redirect('/dashboard');
+    } catch (err) { req.flash('error', err.message); res.redirect('/dashboard'); }
 });
 
 app.post('/debts/:notifyId/accept', isLoggedIn, async (req, res) => {
@@ -159,8 +169,9 @@ app.post('/debts/:notifyId/accept', isLoggedIn, async (req, res) => {
         const debtValue = parsedMatch ? Number(parsedMatch[1]) : 0;
         const user = await User.findById(req.user._id);
         
-        if (user.allowance < debtValue) { req.flash('error', `Insufficient funds to accept.`); return res.redirect('/'); }
-        user.allowance -= debtValue; await user.save();
+        if (user.allowance < debtValue) { req.flash('error', `Insufficient funds to accept.`); return res.redirect('/dashboard'); }
+        user.allowance -= debtValue; 
+        await user.save();
         const senderUser = await User.findById(notification.sender);
         
         await new Expense({ description: `Settled split share`, amount: debtValue, category: 'Other', paidBy: req.user._id, splitType: 'None' }).save();
@@ -170,23 +181,24 @@ app.post('/debts/:notifyId/accept', isLoggedIn, async (req, res) => {
         }
         notification.isRead = true; await notification.save();
         await new Notification({ recipient: notification.sender, sender: req.user._id, type: 'PAYMENT_MARKED', message: `${req.user.username} paid ₹${debtValue} instantly.` }).save();
-        req.flash('success', `Request accepted. ₹${debtValue} transferred.`); res.redirect('/');
-    } catch (err) { res.redirect('/'); }
+        req.flash('success', `Request accepted. ₹${debtValue} transferred.`);
+        res.redirect('/dashboard');
+    } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/debts/:notifyId/decline', isLoggedIn, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.notifyId);
         notification.isRead = true; await notification.save();
-        res.redirect('/');
-    } catch (e) { res.redirect('/'); }
+        res.redirect('/dashboard');
+    } catch (e) { res.redirect('/dashboard'); }
 });
 
 app.post('/notifications/:id/dismiss', isLoggedIn, async (req, res) => {
     try {
         await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
-        res.redirect('/');
-    } catch (e) { res.redirect('/'); }
+        res.redirect('/dashboard');
+    } catch (e) { res.redirect('/dashboard'); }
 });
 
 app.post('/expenses/:id/delete', isLoggedIn, async (req, res) => {
@@ -196,23 +208,23 @@ app.post('/expenses/:id/delete', isLoggedIn, async (req, res) => {
         if (expense.splitType === 'Settlement') user.allowance = Math.max(0, user.allowance - expense.amount);
         else user.allowance += expense.amount;
         await user.save(); await Expense.findByIdAndDelete(req.params.id);
-        req.flash('success', 'Record removed.'); res.redirect('/');
-    } catch (err) { res.redirect('/'); }
+        req.flash('success', 'Record removed.'); res.redirect('/dashboard');
+    } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/add-funds', isLoggedIn, async (req, res) => {
     try {
         const user = await User.findById(req.user._id); user.allowance += Number(req.body.fundingAmount); await user.save();
-        req.flash('success', 'Allowance updated!'); res.redirect('/');
-    } catch (err) { res.redirect('/'); }
+        req.flash('success', 'Allowance updated!'); res.redirect('/dashboard');
+    } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/reset-funds', isLoggedIn, async (req, res) => {
-    try { await User.findByIdAndUpdate(req.user._id, { allowance: 0 }); req.flash('success', 'Reset to zero.'); res.redirect('/'); } catch (err) { res.redirect('/'); }
+    try { await User.findByIdAndUpdate(req.user._id, { allowance: 0 }); req.flash('success', 'Reset to zero.'); res.redirect('/dashboard'); } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.get('/goals', isLoggedIn, async (req, res) => {
-    try { const user = await User.findById(req.user._id); res.render('goals/index', { goals: user.goals }); } catch (err) { res.redirect('/'); }
+    try { const user = await User.findById(req.user._id); res.render('goals/index', { goals: user.goals }); } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/goals', isLoggedIn, async (req, res) => {
@@ -247,7 +259,7 @@ app.get('/lobbies', isLoggedIn, async (req, res) => {
     try {
         const lobbies = await Lobby.find({ status: 'Open' }).populate('host', 'username').populate('members.user', 'username');
         res.render('lobbies/index', { lobbies });
-    } catch (err) { res.redirect('/'); }
+    } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/lobbies', isLoggedIn, async (req, res) => {
@@ -297,7 +309,7 @@ app.get('/transit', isLoggedIn, async (req, res) => {
     try {
         const transits = await Transit.find({ status: 'Open' }).populate('host', 'username').populate('members.user', 'username');
         res.render('transit/index', { transits });
-    } catch (err) { res.redirect('/'); }
+    } catch (err) { res.redirect('/dashboard'); }
 });
 
 app.post('/transit', isLoggedIn, async (req, res) => {
@@ -347,4 +359,13 @@ app.post('/transit/:id/close', isLoggedIn, async (req, res) => {
 });
 
 app.all('*', (req, res) => { res.status(404).send('Page Not Found'); });
-app.listen(process.env.PORT || 3000, () => { console.log(`Serving on port 3000`); });
+
+const port = process.env.PORT || 3000;
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Serving on port ${port}`);
+    });
+}
+
+// CRITICAL FOR VERCEL DEPLOYMENT
+module.exports = app;

@@ -110,12 +110,12 @@ router.post('/accept-friend/:notifyId', async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.notifyId)) {
             req.flash('error', 'Invalid reference ID.');
-            return res.redirect('/');
+            return res.redirect('/dashboard');
         }
         const notification = await Notification.findById(req.params.notifyId);
         if (!notification || notification.recipient.toString() !== req.user._id.toString()) {
             req.flash('error', 'Invalid request.');
-            return res.redirect('/');
+            return res.redirect('/dashboard');
         }
         await User.findByIdAndUpdate(req.user._id, { $addToSet: { friends: notification.sender } });
         await User.findByIdAndUpdate(notification.sender, { $addToSet: { friends: req.user._id } });
@@ -130,10 +130,10 @@ router.post('/accept-friend/:notifyId', async (req, res) => {
         });
         await confirmNotification.save();
         req.flash('success', 'Friend added to your circle!');
-        res.redirect('/');
+        res.redirect('/dashboard');
     } catch (e) {
         req.flash('error', 'Something went wrong.');
-        res.redirect('/');
+        res.redirect('/dashboard');
     }
 });
 
@@ -143,9 +143,9 @@ router.post('/decline-friend/:notifyId', async (req, res) => {
         if (mongoose.Types.ObjectId.isValid(req.params.notifyId)) {
             await Notification.findByIdAndUpdate(req.params.notifyId, { isRead: true });
         }
-        res.redirect('/');
+        res.redirect('/dashboard');
     } catch (e) {
-        res.redirect('/');
+        res.redirect('/dashboard');
     }
 });
 
@@ -155,21 +155,21 @@ router.post('/remove-friend', async (req, res) => {
         const { friendId } = req.body;
         if (!friendId || !mongoose.Types.ObjectId.isValid(friendId)) {
             req.flash('error', 'No valid friend identifier provided.');
-            return res.redirect('/');
+            return res.redirect('/dashboard');
         }
         await User.findByIdAndUpdate(req.user._id, { $pull: { friends: friendId } });
         await User.findByIdAndUpdate(friendId, { $pull: { friends: req.user._id } });
         req.flash('success', 'User removed from your friend circle.');
-        res.redirect('/');
+        res.redirect('/dashboard');
     } catch (e) {
         req.flash('error', 'Failed to disconnect user from your circle.');
-        res.redirect('/');
+        res.redirect('/dashboard');
     }
 });
 
 // --- AUTHENTICATION ROUTES ---
 router.get('/register', (req, res) => {
-    if (req.isAuthenticated()) return res.redirect('/');
+    if (req.isAuthenticated()) return res.redirect('/dashboard');
     res.render('users/register'); 
 });
 
@@ -191,7 +191,7 @@ router.post('/register', async (req, res, next) => {
         req.login(registeredUser, err => {
             if (err) return next(err);
             req.flash('success', 'Welcome to FinMate!');
-            res.redirect('/');
+            res.redirect('/dashboard');
         });
     } catch (e) {
         req.flash('error', e.message);
@@ -200,7 +200,7 @@ router.post('/register', async (req, res, next) => {
 });
 
 router.get('/login', (req, res) => {
-    if (req.isAuthenticated()) return res.redirect('/');
+    if (req.isAuthenticated()) return res.redirect('/dashboard');
     res.render('users/login');
 });
 
@@ -209,7 +209,7 @@ router.post('/login', passport.authenticate('local', {
     failureRedirect: '/login'
 }), (req, res) => {
     req.flash('success', 'Welcome back!');
-    res.redirect('/');
+    res.redirect('/dashboard');
 });
 
 router.get('/logout', (req, res) => {
