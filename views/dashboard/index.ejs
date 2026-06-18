@@ -186,7 +186,6 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         <% populatedUser.friends.forEach(friend => { %>
                                             <% if(friend && friend.username) { %>
-                                                <!-- FIX: Changed outer element from span to div to prevent HTML parser breaking on nested forms -->
                                                 <div class="badge border px-3 py-2 rounded-pill fw-medium d-flex align-items-center gap-2 shadow-sm" style="background-color: var(--finmate-nav-bg); color: var(--finmate-text); border-color: var(--finmate-border) !important;">
                                                     <i class="bi bi-person-circle text-primary"></i> 
                                                     <span><%= friend.username %></span>
@@ -211,7 +210,6 @@
                     </div>
                 </div>
 
-                <!-- MODULE 3: TRANSIT RADAR -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -241,7 +239,6 @@
                     </div>
                 </div>
 
-                <!-- MODULE 4: FOOD POOL CARTS -->
                 <div class="col-md-6 col-12">
                     <div class="card border shadow-sm h-100" style="background-color: var(--finmate-card-bg); border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column justify-content-between">
@@ -276,7 +273,6 @@
     </div>
 </div>
 
-<!-- MODALS -->
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: var(--finmate-card-bg); border-radius: 16px; border: 1px solid var(--finmate-border);">
@@ -358,12 +354,14 @@
                     <div class="border rounded-3 p-3 bg-body overflow-auto" style="max-height: 220px;">
                         <% if(typeof populatedUser !== 'undefined' && populatedUser.friends && populatedUser.friends.length > 0) { %>
                             <% populatedUser.friends.forEach(friend => { %>
-                                <div class="form-check d-flex flex-column mb-3 pb-2 border-bottom last-border-0">
+                                <div class="d-flex flex-column mb-3 pb-2 border-bottom last-border-0">
                                     <div class="d-flex align-items-center justify-content-between w-100">
-                                        <label class="form-check-label small fw-medium" for="check_<%= friend._id %>">
-                                            <input class="form-check-input style-purple-checkbox me-2 friend-selector-checkbox" type="checkbox" name="selectedFriends" value="<%= friend._id %>" id="check_<%= friend._id %>" data-id="<%= friend._id %>">
-                                            <%= friend.username %>
-                                        </label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input class="form-check-input style-purple-checkbox m-0 friend-selector-checkbox" type="checkbox" name="selectedFriends" value="<%= friend._id %>" id="check_<%= friend._id %>" data-id="<%= friend._id %>">
+                                            <label class="form-check-label small fw-medium m-0" for="check_<%= friend._id %>">
+                                                <%= friend.username %>
+                                            </label>
+                                        </div>
                                         <span class="badge bg-light text-dark border hidden-calc-pill" id="calc_badge_<%= friend._id %>" style="display:none;">₹0</span>
                                     </div>
                                     <div class="mt-2 custom-input-wrapper-box" id="wrapper_<%= friend._id %>" style="display: none;">
