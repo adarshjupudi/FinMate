@@ -79,7 +79,11 @@ router.post('/send-friend-request', async (req, res) => {
             return res.json({ success: false, error: 'Invalid or missing user identifier.' });
         }
         const currentUser = await User.findById(req.user._id);
-        if (currentUser.friends.includes(friendId)) {
+        
+        // FIX: Fallback to empty array if 'friends' doesn't exist yet on new accounts
+        const friendsList = currentUser.friends || [];
+        
+        if (friendsList.includes(friendId)) {
             return res.json({ success: false, error: 'User is already in your circle.' });
         }
         const existingRequest = await Notification.findOne({

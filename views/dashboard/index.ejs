@@ -190,12 +190,13 @@
                                                     <i class="bi bi-person-circle text-primary"></i> 
                                                     <span><%= friend.username %></span>
                                                     
+                                                    <!-- FIX: Properly closed the form tag here instead of </span > -->
                                                     <form action="/remove-friend" method="POST" class="d-inline m-0 p-0 ms-1" onsubmit="return confirm('Remove <%= friend.username %> from your circle?');">
                                                         <input type="hidden" name="friendId" value="<%= friend._id %>">
                                                         <button type="submit" class="bg-transparent border-0 p-0 m-0 d-inline-flex align-items-center text-danger" style="cursor: pointer; font-size: 0.9rem;">
                                                             <i class="bi bi-x-circle-fill text-danger opacity-75"></i>
                                                         </button>
-                                                    </span >
+                                                    </form>
                                                 </span>
                                             <% } %>
                                         <% }) %>
