@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const engine = require('ejs-mate');
 const session = require('express-session');
+const MongoStore = require('connect-mongo')(session); // ADDED: MongoStore for serverless sessions
 const flash = require('connect-flash');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
@@ -39,11 +40,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ADDED: Configuration for the database session store
+const store = new MongoStore({
+    url: dbUrl,
+    secret: process.env.SECRET || 'thisshouldbeabettersecret!',
+    touchAfter: 24 * 60 * 60 // Unnecessary saves are avoided, updates only once every 24 hours unless data changes
+});
+
+store.on("error", function(e) {
+    console.log("SESSION STORE ERROR", e);
+});
+
 const sessionConfig = {
-    secret: 'thisshouldbeabettersecret!',
+    store: store, // ADDED: Tells express-session to use MongoDB instead of server memory
+    secret: process.env.SECRET || 'thisshouldbeabettersecret!',
     resave: false,
     saveUninitialized: true,
-    cookie: { httpOnly: true, expires: Date.now() + 1000 * 60 * 60 * 24 * 7, maxAge: 1000 * 60 * 60 * 24 * 7 }
+    cookie: { 
+        httpOnly: true, 
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, 
+        maxAge: 1000 * 60 * 60 * 24 * 7 
+    }
 };
 
 app.use(session(sessionConfig));
